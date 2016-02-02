@@ -21,7 +21,7 @@ import (
 	// with their package name if I wanted to use them, but I'd rather just have them
 	// all be "considered" part of the same package/namespace. So, I purposefully use
 	// a dot import here to do so, despite that in most cases dot importing is not great
-	. "github.com/StabbyCutyou/moldovan_slammer/moldova/data"
+	. "github.com/StabbyCutyou/moldova/data"
 )
 
 func newObjectCache() map[string]interface{} {
