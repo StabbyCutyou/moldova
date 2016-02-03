@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/StabbyCutyou/moldovan_slammer/moldova"
+	"github.com/StabbyCutyou/moldova"
 )
 
 type config struct {
