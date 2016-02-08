@@ -1,5 +1,6 @@
 package data
 
+// PrintableRanges is a list of regions in Unicode that are displayable.
 // If you'd like to see a new range added here, please open a PR, and include a link
 // to wikipedia or another resource demonstrating what characters are in the range
 var PrintableRanges = [][]int{
