@@ -1,6 +1,7 @@
 package moldova
 
 import (
+	"bytes"
 	"strconv"
 	"testing"
 )
@@ -9,28 +10,44 @@ import (
 // all the options behave as expected.
 
 func TestBuildSQL(t *testing.T) {
-	template := "INSERT INTO floof VALUES ('{guid}','{guid:0}','{country}',{int:-2000:0},{int:100:1000},{float:-1000.0:-540.0},{int:1:40},'{now}','{now:0}','{char:2:up}',NULL,-3)"
-	_, err := ParseTemplate(template)
+	template := "INSERT INTO floof VALUES ('{guid}','{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestCountries(t *testing.T) {
-	template := "INSERT INTO `floop` VALUES ('{country}','{country:up:0}','{country}','{country:down:1}')"
-	_, err := ParseTemplate(template)
+	template := "INSERT INTO `floop` VALUES ('{country}','{country:case:up|ordinal:0}','{country}','{country:case:down|ordinal:1}')"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
 	if err != nil {
 		t.Error(err)
 	}
 }
 
 func TestInteger(t *testing.T) {
-	template := "{int:5:6}"
-	tp, err := ParseTemplate(template)
+	template := "{int:min:5|max:6}"
+	cs, err := BuildCallstack(template)
 	if err != nil {
 		t.Error(err)
 	}
-	c, err := strconv.Atoi(tp)
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
+	if err != nil {
+		t.Error(err)
+	}
+
+	c, err := strconv.Atoi(result.String())
 	if err != nil {
 		t.Error(err)
 	}
@@ -40,25 +57,42 @@ func TestInteger(t *testing.T) {
 }
 
 func TestNowOrdinal(t *testing.T) {
-	template := "{now:1}"
-	_, err := ParseTemplate(template)
+	template := "{now:ordinal:1}"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
 	if err == nil {
 		t.Error("Did not return an error on an invalid {now} ordinal")
 	}
 }
 
 func TestGuidOrdinal(t *testing.T) {
-	template := "{guid:1}"
-	_, err := ParseTemplate(template)
+	template := "{guid:ordinal:1}"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
 	if err == nil {
-		t.Error("Did not return an error on an invalid {gui} ordinal")
+		t.Error("Did not return an error on an invalid {guid} ordinal")
 	}
 }
 
-func BenchmarkBuildSQL(b *testing.B) {
-	template := "INSERT INTO `floop` VALUES ('{guid}','{guid:0}',{int:-2000:0},{int:100:1000},{int:1:40},'{now}','{now:0}','{char:2:up}',NULL)"
-
+func BenchmarkBuildCallstackRuns(b *testing.B) {
+	template := "INSERT INTO floof VALUES ('{guid}','{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
+	var cs *Callstack
+	var err error
 	for n := 0; n < b.N; n++ {
-		ParseTemplate(template)
+		if n == 0 {
+			if cs, err = BuildCallstack(template); err != nil {
+				b.Error(err)
+			}
+		}
+		result := &bytes.Buffer{}
+		cs.Write(result)
 	}
 }
