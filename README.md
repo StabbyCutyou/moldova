@@ -33,7 +33,7 @@ The command accepts 2 arguments:
 ## Example
 
 ```bash
-moldova -t "INSERT INTO floof VALUES ('{guid}','{guid:0}','{country}',{int:-2000:0},{int:100:1000},{float:-1000.0:-540.0},{int:1:40},'{now}','{now:0}','{country:up}',NULL,-3)" -n 100
+moldova -t "INSERT INTO floof VALUES ('{guid}','{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{country:case:up}',NULL,-3)" -n 100
 ```
 
 This would provide sample output like the following:
@@ -47,66 +47,103 @@ INSERT INTO floof VALUES ('a3f4151a-a304-4190-a3df-7fd97ce58588','a3f4151a-a304-
 
 # Tokens
 
-## {guid:ordinal}
+## {guid}
+
+### Options
+* ordinal : integer >= 0
+
+### Description
 
 Slammer will replace any instance of {guid} with a GUID/UUID
 
-If you provide the :ordinal option, for the current line of text being generated,
+If you provide the *ordinal:* option, for the current line of text being generated,
 you can have the Slammer insert an existing value, rather than a new one. For
 example:
 
-"{guid} - {guid:0}"
+"{guid} - {guid:ordinal:0}"
 
 In this example, both guids will be replaced with the same value. This is a way
 to back-reference existing generated values, for when you need something repeated.
 
-## {now:ordinal}
+## {now}
+
+### Options
+* ordinal : integer >= 0
+
+### Description
 
 Slammer will replace any instance of {now} with a string representation of Golangs
 time.Now() function, formatted per the golang date format example: "2006-01-02 15:04:05".
 
-{now} also supports the same :ordinal option as {guid}
+{now} also supports the *ordinal:* option
 
-## {integer:lower:upper}
+## {integer}
+
+### Options
+* min : integer < max
+* max : integer > min
+* ordinal : integer >= 0
+
+### Description
 
 Slammer will replace any instance of {integer} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
 
-{integer} currently does not support :ordinal
+{integer} also supports *ordinal:* option
 
-## {float:lower:upper}
+## {float}
+
+### Options
+* min : integer < max
+* max : integer > min
+* ordinal : integer >= 0
+
+### Description
 
 Slammer will replace any instance of {float} with a random Float64, optionally between the range provided. The defaults, if not provided, are 0.0 to 100.0
 
-{float} currently does not support :ordinal
+{float} also supports *ordinal:* option
 
-## {char:number:case}
+## {unicode}
 
-Slammer will replace any instance of {char} with a randomly generated set of unicode
+### Options
+* length : integer >= 1
+* case : "up" or "down"
+* ordinal : integer >= 0
+
+### Description
+
+Slammer will replace any instance of {unicode} with a randomly generated set of unicode
 characters, of a length specified by :number. The default value is 2.
 
-{char} also takes the :case argument, which is either 'up' or 'down', like so
+{unicode} also takes the :case argument, which is either 'up' or 'down', like so
 
-{char:5:up}
-{char:2:down}
+{unicode:case:up}
+{unicode:case:down}
 
-{char} currently does not support :ordinal, nor a mixing of cases
+{unicode} also supports *ordinal:* option
 
 Only a certain subset of unicode character ranges are supported by default, as defined
 in the moldova/data/unicode.go file.
 
-## {country:case:ordinal}
+## {country}
+
+### Options
+* case : "up" or "down"
+* ordinal : integer >= 0
+
+### Description
 
 Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 country code.
 
-{country} supports the same :case argument as {char}. The default value is "up"
+{country} supports the same *case:* argument as {unicode}. The default value is "up"
 
-{country} also supports the same :ordinal argument as {guid}. Because of how the template is interpreted, you must provide the optional :case argument if you are also to specify an ordinal.
+{country} also supports the *ordinal:* argument.
 
 # Roadmap
 
 I'll continue to add support for more random value categories, such as a general {time} field, as well as additions to existing ones (for example, a timezone param for :now, as well as the ability to choose a formatting method).
 
-I also want to come up with a better internal design for how the interpreter is organized and architected, but I'm waiting until I have a more complete feature set before I tackle an overall re-design of the current implementation.
+The current approach is also a bit slow, parsing and interpreting the template each time it's invoked. I'm going to re-write this part of it, so that it builds up an internal callstack of functions during the initial parse, then iterates and invokes the callstack in order to generate N iterations of the template itself, preventing unnecessary re-parses of the template.
 
 # License
 
