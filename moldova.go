@@ -24,8 +24,29 @@ import (
 	. "github.com/StabbyCutyou/moldova/data"
 )
 
-func newObjectCache() map[string]interface{} {
-	return map[string]interface{}{"guid": make([]string, 0), "now": make([]string, 0), "country": make([]string, 0)}
+type cmdOptions map[string]string
+type objectCache map[string]interface{}
+
+var defaultOptions = map[string]cmdOptions{
+	"guid":    cmdOptions{"ordinal": "-1"},
+	"now":     cmdOptions{"ordinal": "-1"},
+	"int":     cmdOptions{"min": "0", "maxr": "100", "ordinal": "-1"},
+	"float":   cmdOptions{"min": "0.0", "maxr": "100.0", "ordinal": "-1"},
+	"ascii":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
+	"unicode": cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
+	"country": cmdOptions{"ordinal": "-1", "case": "up"},
+}
+
+func newObjectCache() objectCache {
+	return objectCache{
+		"guid":    make([]string, 0),
+		"now":     make([]string, 0),
+		"country": make([]string, 0),
+		"unicode": make([]string, 0),
+		"ascii":   make([]string, 0),
+		"int":     make([]int, 0),
+		"float":   make([]float64, 0),
+	}
 }
 
 // ParseTemplate will take an input string of text, and replace any recongized
@@ -49,8 +70,16 @@ func ParseTemplate(inputTemplate string) (string, error) {
 		} else if c == '}' {
 			// We're closing a word, so eval it and get the data to put in the string
 			foundWord = false
-			parts := strings.Split(wordBuffer.String(), ":")
-			val, err := resolveWord(objectCache, parts...)
+			parts := strings.SplitN(wordBuffer.String(), ":", 2)
+			rawOpts := ""
+			if len(parts) > 1 {
+				rawOpts = parts[1]
+			}
+			opts, err := optionsToMap(parts[0], rawOpts)
+			if err != nil {
+				return "", err
+			}
+			val, err := resolveWord(objectCache, parts[0], opts)
 			if err != nil {
 				return "", err
 			}
@@ -83,21 +112,42 @@ func uuidv4() string {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
-func resolveWord(objectCache map[string]interface{}, parts ...string) (string, error) {
-	switch parts[0] {
-	case "guid":
-		return guid(objectCache, parts[1:]...)
-	case "int":
-		return integer(parts[1:]...)
-	case "now":
-		return now(objectCache, parts[1:]...)
-	case "float":
-		return float(parts[1:]...)
-	case "char":
-		return char(parts[1:]...)
-	case "country":
-		return country(objectCache, parts[1:]...)
+func optionsToMap(name string, options string) (map[string]string, error) {
+	parts := strings.Split(options, "|")
+	m := make(map[string]string)
+	defaults := defaultOptions[name]
+	for k, v := range defaults {
+		m[k] = v
 	}
+	// If there were no options specified, just use defaults
+	if len(options) == 0 {
+		return m, nil
+	}
+	for _, p := range parts {
+		opt := strings.Split(p, ":")
+		m[opt[0]] = opt[1]
+	}
+	return m, nil
+}
+
+func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
+	// If there were options provided, convert them to a lookup map prior to invoking
+	// a randomizer.
+	switch word {
+	case "guid":
+		return guid(oc, opts)
+	case "int":
+		return integer(oc, opts)
+	case "now":
+		return now(oc, opts)
+	case "float":
+		return float(oc, opts)
+	case "unicode":
+		return unicode(oc, opts)
+	case "country":
+		return country(oc, opts)
+	}
+	// TODO make this an error
 	return "", nil
 }
 
@@ -105,125 +155,146 @@ func resolveWord(objectCache map[string]interface{}, parts ...string) (string, e
 // It's described in the readme, but I should probably make these public and then
 // give them proper comments, so that GoDoc can also document them
 
-func integer(opts ...string) (string, error) {
-	lowerBound := 0
-	upperBound := 100
-
-	if len(opts) > 1 {
-		nu, err := strconv.Atoi(opts[1])
-		if err != nil {
-			return "", nil
-		}
-		upperBound = nu
+func integer(oc objectCache, opts cmdOptions) (string, error) {
+	lb := opts["min"]
+	ub := opts["max"]
+	min, err := strconv.Atoi(lb)
+	if err != nil {
+		return "", err
+	}
+	max, err := strconv.Atoi(ub)
+	if err != nil {
+		return "", err
+	}
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
 	}
 
-	if len(opts) > 0 {
-		nl, err := strconv.Atoi(opts[0])
-		if err != nil {
-			return "", nil
+	if ord >= 0 {
+		c := oc["int"]
+		cache := c.([]int)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
 		}
-		lowerBound = nl
+		i := cache[ord]
+		return strconv.Itoa(i), nil
 	}
 
-	if lowerBound > upperBound {
+	if min > max {
 		return "", errors.New("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	// Incase we need to tell the function to invert the case
 	negateResult := false
 	// get the difference between them
-	diff := upperBound - lowerBound
+	diff := max - min
 	// Since this supports negatives, need to handle some special corner cases?
-	if lowerBound < 0 && upperBound <= 0 {
+	if max < 0 && min <= 0 {
 		// if the range is entirely negative
 		negateResult = true
 		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		oldLower := lowerBound
-		lowerBound = -upperBound
-		upperBound = -oldLower
+		oldLower := min
+		min = -max
+		max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
 	// get a number from 0 to diff
 	n := rand.Intn(diff)
 	// add lowerbound to it - now it's between lower and upper
-	n += lowerBound
+	n += min
 	if negateResult {
 		n = -n
 	}
+
+	// store it in the cache
+	ca := oc["int"]
+	cache := ca.([]int)
+	oc["int"] = append(cache, n)
+
 	return strconv.Itoa(n), nil
 }
 
-func float(opts ...string) (string, error) {
-	lowerBound := 0.0
-	upperBound := 100.0
-
-	if len(opts) > 1 {
-		nu, err := strconv.ParseFloat(opts[1], 64)
-		if err != nil {
-			return "", nil
-		}
-		upperBound = nu
+func float(oc objectCache, opts cmdOptions) (string, error) {
+	lb := opts["min"]
+	ub := opts["max"]
+	min, err := strconv.ParseFloat(lb, 64)
+	if err != nil {
+		return "", err
+	}
+	max, err := strconv.ParseFloat(ub, 64)
+	if err != nil {
+		return "", err
+	}
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
 	}
 
-	if len(opts) > 0 {
-		nl, err := strconv.ParseFloat(opts[0], 64)
-		if err != nil {
-			return "", nil
+	if ord >= 0 {
+		c := oc["float"]
+		cache := c.([]float64)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
 		}
-
-		lowerBound = nl
+		n := cache[ord]
+		return fmt.Sprintf("%f", n), nil
 	}
 
-	if lowerBound > upperBound {
+	if min > max {
 		return "", errors.New("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	// Incase we need to tell the function to invert the case
 	negateResult := false
 	// get the difference between them
-	diff := upperBound - lowerBound
+	diff := max - min
 	// Since this supports negatives, need to handle some special corner cases?
-	if lowerBound < 0.0 && upperBound <= 0.0 {
+	if min < 0.0 && max <= 0.0 {
 		// if the range is entirely negative
 		negateResult = true
 		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		oldLower := lowerBound
-		lowerBound = -upperBound
-		upperBound = -oldLower
+		oldLower := min
+		min = -max
+		max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
 	// get a number from 0 to diff
-	n := (rand.Float64() * diff) + lowerBound
+	n := (rand.Float64() * diff) + min
 
 	if negateResult {
 		n = -n
 	}
+
+	// store it in the cache
+	ca := oc["float"]
+	cache := ca.([]float64)
+	oc["float"] = append(cache, n)
+
 	return fmt.Sprintf("%f", n), nil
 }
 
-func country(objectCache map[string]interface{}, opts ...string) (string, error) {
-	charCase := "up"
-
-	if len(opts) > 0 {
-		charCase = opts[0]
+func country(oc objectCache, opts cmdOptions) (string, error) {
+	cCase := opts["case"]
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
 	}
 
-	if len(opts) > 1 {
-		// We want to re-use an existing country
-		ordinal, err := strconv.Atoi(opts[1])
-		if err != nil {
-			return "", err
-		}
-		c, _ := objectCache["country"]
+	if ord >= 0 {
+		c, _ := oc["country"]
 		cache := c.([]string)
-		if len(cache) < ordinal {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for countries. Please check your input string", ordinal)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord)
 		}
-		country := cache[ordinal]
+		country := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
-		if charCase == "down" {
+		if c == "down" {
 			return strings.ToLower(country), nil
 		}
 		return country, nil
@@ -232,11 +303,11 @@ func country(objectCache map[string]interface{}, opts ...string) (string, error)
 	n := rand.Intn(len(CountryCodes))
 	country := CountryCodes[n]
 	// store it in the cache
-	c, _ := objectCache["country"]
-	cache := c.([]string)
-	objectCache["country"] = append(cache, country)
+	ca := oc["country"]
+	cache := ca.([]string)
+	oc["country"] = append(cache, country)
 
-	if charCase == "down" {
+	if cCase == "down" {
 		return strings.ToLower(country), nil
 	}
 
@@ -244,28 +315,41 @@ func country(objectCache map[string]interface{}, opts ...string) (string, error)
 
 }
 
-func char(opts ...string) (string, error) {
-	charCase := "down"
-	numChars := 2
-
-	if len(opts) > 1 {
-		charCase = opts[1]
+func unicode(oc objectCache, opts cmdOptions) (string, error) {
+	cCase := opts["case"]
+	n := opts["length"]
+	num, err := strconv.Atoi(n)
+	if err != nil {
+		return "", err
+	} else if num <= 0 {
+		return "", errors.New("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
 	}
-	if len(opts) > 0 {
-		nc, err := strconv.Atoi(opts[0])
-		if err != nil {
-			return "", err
-		}
-		if nc <= 0 {
-			return "", errors.New("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
-		}
-
-		numChars = nc
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
 	}
 
-	result := generateRandomString(numChars)
+	if ord >= 0 {
+		c, _ := oc["unicode"]
+		cache := c.([]string)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord)
+		}
+		str := cache[ord]
+		// Countries go into the cache upper case, only check for lowering it
+		if c == "up" {
+			return strings.ToUpper(str), nil
+		}
+		return str, nil
+	}
 
-	if charCase == "up" {
+	result := generateRandomString(num)
+	// store it in the cache
+	ca := oc["unicode"]
+	cache := ca.([]string)
+	oc["unicode"] = append(cache, result)
+	if cCase == "up" {
 		return strings.ToUpper(string(result)), nil
 	}
 	return string(result), nil
@@ -291,51 +375,51 @@ func generateRandomString(length int) string {
 	return string(rarr)
 }
 
-func now(objectCache map[string]interface{}, opts ...string) (string, error) {
-	if len(opts) > 0 {
-		// We want to re-use an existing guid
-		ordinal, err := strconv.Atoi(opts[0])
-		if err != nil {
-			return "", err
-		}
-		c, _ := objectCache["now"]
+func now(oc objectCache, opts cmdOptions) (string, error) {
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
+	}
+	if ord >= 0 {
+		c, _ := oc["now"]
 		cache := c.([]string)
-		if len(cache) < ordinal {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ordinal)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
 		}
-		return cache[ordinal], nil
+		return cache[ord], nil
 	}
 	now := time.Now().Format(SimpleTimeFormat)
 
 	// store it in the cache
-	c, _ := objectCache["now"]
+	c, _ := oc["now"]
 	cache := c.([]string)
-	objectCache["now"] = append(cache, now)
+	oc["now"] = append(cache, now)
 
 	return now, nil
 
 }
 
-func guid(objectCache map[string]interface{}, opts ...string) (string, error) {
-	if len(opts) > 0 {
-		// We want to re-use an existing guid
-		ordinal, err := strconv.Atoi(opts[0])
-		if err != nil {
-			return "", err
-		}
-		c, _ := objectCache["guid"]
+func guid(oc objectCache, opts cmdOptions) (string, error) {
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
+	}
+	if ord >= 0 {
+		c, _ := oc["guid"]
 		cache := c.([]string)
-		if len(cache) < ordinal {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for guids. Please check your input string", ordinal)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord)
 		}
-		return cache[ordinal], nil
+		return cache[ord], nil
 	}
 
 	guid := uuidv4()
 	// store it in the cache
-	c, _ := objectCache["guid"]
+	c, _ := oc["guid"]
 	cache := c.([]string)
-	objectCache["guid"] = append(cache, guid)
+	oc["guid"] = append(cache, guid)
 
 	return guid, nil
 
