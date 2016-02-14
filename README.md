@@ -47,6 +47,22 @@ INSERT INTO floof VALUES ('a3f4151a-a304-4190-a3df-7fd97ce58588','a3f4151a-a304-
 
 # Tokens
 
+Tokens are represented by special values placed inside of { } characters.
+
+Each token follows this pattern:
+
+{command:argument_name:value|argument_name:value|...|...}
+
+Each token defines it's own set of arguments, which are outlined below. If you're provided multiple arguments, the key-value pairs of argument names to values are delimited by a | pipe character. These can be provided in any order, so long as they are valid arguments.
+
+It is only necessary to provide a | when you have further arguments to provide. For example:
+
+* {integer}
+* {integer:min:10}
+* {integer:min:10|max:50}
+* {integer:min:10|max:50|ordinal:0}
+
+
 ## {guid}
 
 ### Options
@@ -142,6 +158,8 @@ Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 countr
 # Roadmap
 
 I'll continue to add support for more random value categories, such as a general {time} field, as well as additions to existing ones (for example, a timezone param for :now, as well as the ability to choose a formatting method).
+
+Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |
 
 The current approach is also a bit slow, parsing and interpreting the template each time it's invoked. I'm going to re-write this part of it, so that it builds up an internal callstack of functions during the initial parse, then iterates and invokes the callstack in order to generate N iterations of the template itself, preventing unnecessary re-parses of the template.
 
