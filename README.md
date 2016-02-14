@@ -161,6 +161,8 @@ I'll continue to add support for more random value categories, such as a general
 
 Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |
 
+More efficient approach for dealing with "pass-through" data in the callstack. Currently, each character gets it's own function to call, but those could be coalesced into a single function whenever possible between token functions.
+
 The current approach is also a bit slow, parsing and interpreting the template each time it's invoked. I'm going to re-write this part of it, so that it builds up an internal callstack of functions during the initial parse, then iterates and invokes the callstack in order to generate N iterations of the template itself, preventing unnecessary re-parses of the template.
 
 # License
