@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"flag"
 	"log"
@@ -19,15 +20,21 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	cs, err := moldova.BuildCallstack(cfg.template)
+	if err != nil {
+		log.Fatal(err)
+	}
 	didErr := false
+	result := &bytes.Buffer{}
 	for i := 0; i < cfg.iterations; i++ {
-		t, err := moldova.ParseTemplate(cfg.template)
+		err := cs.Write(result)
 		if err != nil {
 			log.Print(err)
 			didErr = true
 		} else {
-			os.Stdout.Write([]byte(t + "\n"))
+			os.Stdout.Write([]byte(result.String() + "\n"))
 		}
+		result.Reset()
 	}
 
 	if didErr {

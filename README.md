@@ -157,7 +157,7 @@ Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 countr
 
 # Roadmap
 
-I'll continue to add support for more random value categories, such as a general {time} field, as well as additions to existing ones (for example, a timezone param for :now, as well as the ability to choose a formatting method).
+I'll continue to add support for more random value categories, such as a general {time} field, as well as additions to existing ones (for example, a timezone param for :now, as well as the ability to choose a formatting method). There are also hooks to support ascii-only string generation, but as of yet it is not implemented.
 
 Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |
 

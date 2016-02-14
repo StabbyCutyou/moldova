@@ -27,6 +27,39 @@ import (
 type cmdOptions map[string]string
 type objectCache map[string]interface{}
 
+// TokenWriter is a closure that wraps a call to generate random data, and places
+// the result into the provided buffer
+type tokenWriter func(*bytes.Buffer, objectCache) error
+
+// Callstack is a list of closures to invoke in order to generate the result of a
+// parsed template
+type Callstack struct {
+	stack []tokenWriter
+	cache objectCache
+}
+
+func newCallstack() *Callstack {
+	return &Callstack{
+		stack: make([]tokenWriter, 0),
+	}
+}
+
+// Push is
+func (c *Callstack) Push(t tokenWriter) {
+	c.stack = append(c.stack, t)
+}
+
+// Write is
+func (c *Callstack) Write(result *bytes.Buffer) error {
+	c.cache = newObjectCache()
+	for _, f := range c.stack {
+		if err := f(result, c.cache); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 var defaultOptions = map[string]cmdOptions{
 	"guid":    cmdOptions{"ordinal": "-1"},
 	"now":     cmdOptions{"ordinal": "-1"},
@@ -49,20 +82,13 @@ func newObjectCache() objectCache {
 	}
 }
 
-// ParseTemplate will take an input string of text, and replace any recongized
-// tokens with a random value that is determined for each type of token.
-// It supports:
-// {guid:ordinal}
-// {int:lower:upper}
-// {now:ordinal}
-// {float:lower:upper}
-// {char:num:case}
-// {country:case:ordinal}
-func ParseTemplate(inputTemplate string) (string, error) {
-	objectCache := newObjectCache()
-	var result bytes.Buffer
-	var wordBuffer bytes.Buffer
-	var foundWord = false
+// BuildCallstack will parse the template, and return a callstack of closures to
+// invoke in order, which will produce static/random values that can be turned into
+// a string
+func BuildCallstack(inputTemplate string) (*Callstack, error) {
+	stack := newCallstack()
+	wordBuffer := &bytes.Buffer{}
+	foundWord := false
 	for _, c := range inputTemplate {
 		if c == '{' {
 			// We're starting a word to parse
@@ -77,24 +103,41 @@ func ParseTemplate(inputTemplate string) (string, error) {
 			}
 			opts, err := optionsToMap(parts[0], rawOpts)
 			if err != nil {
-				return "", err
+				return nil, err
 			}
-			val, err := resolveWord(objectCache, parts[0], opts)
-			if err != nil {
-				return "", err
+			// Build the closure that will invoke resolveWord
+			f := func(result *bytes.Buffer, cache objectCache) error {
+				val := ""
+				if val, err = resolveWord(cache, parts[0], opts); err != nil {
+					return err
+				}
+				result.WriteString(val)
+				return nil
 			}
-			result.WriteString(val)
+			stack.Push(f)
 			wordBuffer.Reset()
 		} else if foundWord {
 			// push it to the wordBuffer
 			wordBuffer.WriteRune(c)
 		} else {
-			// Straight pass through
-			result.WriteRune(c)
+			// Straight pass through closure
+			// TODO find a way to coalesce these so there are less functions to run
+
+			// If you don't assign 'c' to something, the closures will only ever bind
+			// to whatever value happened to be inside of 'c' when they are invoked,
+			// which will be the last character in the template.
+			// Assigning to 'cb', ClosureBuster, will get around this issue
+			// THANKS .NET PRIOR TO 4.0 FOR TEACHING ME ABOUT ACCESS TO A MODIFIED CLOSURE!
+			cb := c
+			f := func(result *bytes.Buffer, cache objectCache) error {
+				result.WriteRune(cb)
+				return nil
+			}
+			stack.Push(f)
 		}
 	}
 
-	return result.String(), nil
+	return stack, nil
 }
 
 // This function was borrowed with permission from the following location
