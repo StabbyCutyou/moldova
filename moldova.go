@@ -222,7 +222,7 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c := oc["int"]
 		cache := c.([]int)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
 		}
 		i := cache[ord]
@@ -284,7 +284,7 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c := oc["float"]
 		cache := c.([]float64)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
 		}
 		n := cache[ord]
@@ -336,7 +336,7 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c, _ := oc["country"]
 		cache := c.([]string)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord)
 		}
 		country := cache[ord]
@@ -380,7 +380,7 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c, _ := oc["unicode"]
 		cache := c.([]string)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord)
 		}
 		str := cache[ord]
@@ -432,7 +432,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c, _ := oc["now"]
 		cache := c.([]string)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
 		}
 		return cache[ord], nil
@@ -473,7 +473,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c, _ := oc["time"]
 		cache := c.([]string)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
 		}
 		return cache[ord], nil
@@ -505,7 +505,7 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 	if ord >= 0 {
 		c, _ := oc["guid"]
 		cache := c.([]string)
-		if len(cache) < ord {
+		if len(cache)-1 < ord {
 			return "", fmt.Errorf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord)
 		}
 		return cache[ord], nil

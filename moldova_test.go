@@ -2,12 +2,53 @@ package moldova
 
 import (
 	"bytes"
+	"errors"
 	"math/rand"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
+
+type TestComparator func(string) error
+
+type TestCase struct {
+	Template     string
+	Comparator   TestComparator
+	ParseFailure bool
+	WriteFailure bool
+}
+
+var GUIDCases = []TestCase{
+	{
+		Template: "{guid}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "-")
+			if len(p) == 5 &&
+				len(p[0]) == 8 &&
+				len(p[1]) == len(p[2]) && len(p[2]) == len(p[3]) && len(p[3]) == 4 &&
+				len(p[4]) == 12 {
+				return nil
+			}
+			return errors.New("Guid not in correct format: " + s)
+		},
+	},
+	{
+		Template: "{guid}@{guid:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Guid at position 1 not equal to guid at position 0 format: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{guid}@{guid:ordinal:1}",
+		WriteFailure: true,
+	},
+}
 
 // TODO Test each random function individually, under a number of inputs to make supported
 // all the options behave as expected.
@@ -15,6 +56,36 @@ import (
 func TestMain(m *testing.M) {
 	rand.Seed(time.Now().Unix())
 	os.Exit(m.Run())
+}
+
+func TestGuidCases(t *testing.T) {
+	for i, c := range GUIDCases {
+		cs, err := BuildCallstack(c.Template)
+		// If we get an error and weren't expecting it
+		// Or, if we didn't get one but were expecting it
+		if err != nil && !c.ParseFailure {
+			t.Error(err)
+		} else if err == nil && c.ParseFailure {
+			t.Error("Expected to encounter Parse Failure, but did not for Test Case ", c.Template)
+		}
+
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+
+		// If we get an error and weren't expecting it
+		// Or, if we didn't get one but were expecting it
+		if err != nil && !c.WriteFailure {
+			t.Error(err)
+		} else if err == nil && c.ParseFailure {
+			t.Error("Expected to encounter Write Failure, but did not for Test Case ", i)
+		}
+
+		if c.Comparator != nil {
+			if err := c.Comparator(result.String()); err != nil {
+				t.Error(err)
+			}
+		}
+	}
 }
 
 func TestBuildCallstack(t *testing.T) {
@@ -90,32 +161,6 @@ func TestNowOrdinal(t *testing.T) {
 	}
 }
 
-func TestGuid(t *testing.T) {
-	template := "{guid}"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestGuidOrdinal(t *testing.T) {
-	template := "{guid:ordinal:1}"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err == nil {
-		t.Error("Did not return an error on an invalid {guid} ordinal")
-	}
-}
-
 func TestTime(t *testing.T) {
 	template := "{time:format:2006-01-02 15:04:05}"
 	cs, err := BuildCallstack(template)
@@ -144,6 +189,5 @@ func BenchmarkBuildCallstackRuns(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		//fmt.Println(result.String())
 	}
 }
