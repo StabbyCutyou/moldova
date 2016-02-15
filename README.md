@@ -1,4 +1,4 @@
-# Moldova [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://godoc.org/github.com/StabbyCutyou/moldova) [![Build Status](https://travis-ci.org/StabbyCutyou/moldova.svg?branch=feature%2Fstart_of_tests)](https://travis-ci.org/StabbyCutyou/moldova)
+# Moldova [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://godoc.org/github.com/StabbyCutyou/moldova) [![Build Status](https://api.travis-ci.org/StabbyCutyou/moldova.svg)](https://travis-ci.org/StabbyCutyou/moldova)
 Moldova is a lightweight template interpreter, used to generate random values that plug into the template, as defined by a series of custom tokens.
 
 It understands the tokens as defined further down in the document.
