@@ -84,14 +84,39 @@ to back-reference existing generated values, for when you need something repeate
 ## {now}
 
 ### Options
+* format : string, either "simple", "simpletz", or a golang date format string
 * ordinal : integer >= 0
 
 ### Description
 
 Slammer will replace any instance of {now} with a string representation of Golangs
-time.Now() function, formatted per the golang date format example: "2006-01-02 15:04:05".
+time.Now() function, formatted per the provided date format. There are 2 built in formats, for convenience, that are compatible with many databases.
+
+* simple - "2006-01-02 15:04:05"
+* simpletz - "2006-01-02 15:04:05 -0700"
+
+Additionally, you can provide your own format string.
 
 {now} also supports the *ordinal:* option
+
+## {time}
+
+### Options
+* min : integer < max, unix epoch value
+* max : integer > min, unix epoch value
+* format : string, either "simple", "simpletz", or a golang date format string
+* ordinal : integer >= 0
+
+### Description
+
+Slammer will replace any instance of {time} with a string representation of a random time, between min and max in terms of Unix Epoch values. The defaults are between 0, and roughly Now (determined at runtime) There are 2 built in formats, for convenience, that are compatible with many databases.
+
+* simple - "2006-01-02 15:04:05"
+* simpletz - "2006-01-02 15:04:05 -0700"
+
+Additionally, you can provide your own format string.
+
+{time} also supports the *ordinal:* option
 
 ## {integer}
 
