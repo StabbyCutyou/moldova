@@ -90,10 +90,20 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 	wordBuffer := &bytes.Buffer{}
 	foundWord := false
 	for _, c := range inputTemplate {
-		if c == '{' {
+		if !foundWord && c == '{' {
 			// We're starting a word to parse
 			foundWord = true
-		} else if c == '}' {
+			// Dump the current buffer into a closure
+			// Assigning to 'cb', ClosureBuster, will get around this issue
+			// THANKS .NET PRIOR TO 4.0 FOR TEACHING ME ABOUT ACCESS TO A MODIFIED CLOSURE!
+			cb := wordBuffer.String()
+			wordBuffer.Reset()
+			f := func(result *bytes.Buffer, cache objectCache) error {
+				result.WriteString(cb)
+				return nil
+			}
+			stack.Push(f)
+		} else if foundWord && c == '}' {
 			// We're closing a word, so eval it and get the data to put in the string
 			foundWord = false
 			parts := strings.SplitN(wordBuffer.String(), ":", 2)
@@ -116,24 +126,9 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 			}
 			stack.Push(f)
 			wordBuffer.Reset()
-		} else if foundWord {
-			// push it to the wordBuffer
-			wordBuffer.WriteRune(c)
 		} else {
-			// Straight pass through closure
-			// TODO find a way to coalesce these so there are less functions to run
-
-			// If you don't assign 'c' to something, the closures will only ever bind
-			// to whatever value happened to be inside of 'c' when they are invoked,
-			// which will be the last character in the template.
-			// Assigning to 'cb', ClosureBuster, will get around this issue
-			// THANKS .NET PRIOR TO 4.0 FOR TEACHING ME ABOUT ACCESS TO A MODIFIED CLOSURE!
-			cb := c
-			f := func(result *bytes.Buffer, cache objectCache) error {
-				result.WriteRune(cb)
-				return nil
-			}
-			stack.Push(f)
+			// Straight pass through
+			wordBuffer.WriteRune(c)
 		}
 	}
 
