@@ -90,6 +90,19 @@ func TestNowOrdinal(t *testing.T) {
 	}
 }
 
+func TestGuid(t *testing.T) {
+	template := "{guid}"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestGuidOrdinal(t *testing.T) {
 	template := "{guid:ordinal:1}"
 	cs, err := BuildCallstack(template)
