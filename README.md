@@ -3,10 +3,9 @@ Moldova is a lightweight template interpreter, used to generate random values th
 
 It understands the tokens as defined further down in the document.
 
-Moldova also comes with a binary executable you can build, which lets you pipe to STDOUT a stream of templates being rendered, broken by a newline. In this way, you could pipe the output to something like Slammer, outlined below.
+Moldova comes both as a library you can import, as well as a binary executable that you can run, which will output results to STDOUT.
 
-Moldova comes both as a library you can import, as well as a binary executable that you
-can run, which will output results to STDOUT.
+The intended use is via the binary executable.
 
 ## Works great with the Slammer
 
@@ -185,8 +184,6 @@ Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 countr
 I'll continue to add support for more random value categories, such as a general {time} field, as well as additions to existing ones (for example, a timezone param for :now, as well as the ability to choose a formatting method). There are also hooks to support ascii-only string generation, but as of yet it is not implemented.
 
 Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |
-
-More efficient approach for dealing with "pass-through" data in the callstack. Currently, each character gets it's own function to call, but those could be coalesced into a single function whenever possible between token functions.
 
 The current approach is also a bit slow, parsing and interpreting the template each time it's invoked. I'm going to re-write this part of it, so that it builds up an internal callstack of functions during the initial parse, then iterates and invokes the callstack in order to generate N iterations of the template itself, preventing unnecessary re-parses of the template.
 
