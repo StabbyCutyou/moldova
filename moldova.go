@@ -490,14 +490,10 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 }
 
 func formatTime(t *time.Time, format string) string {
-	switch format {
-	case "simple":
-		return t.Format(SimpleTimeFormat)
-	case "simpletz":
-		return t.Format(SimpleTimeWithZoneFormat)
-	default:
-		return t.Format(format)
+	if f, ok := TimeFormats[format]; ok {
+		return t.Format(f)
 	}
+	return t.Format(format)
 }
 
 func guid(oc objectCache, opts cmdOptions) (string, error) {
