@@ -62,7 +62,8 @@ func (c *Callstack) Write(result *bytes.Buffer) error {
 
 var defaultOptions = map[string]cmdOptions{
 	"guid":    cmdOptions{"ordinal": "-1"},
-	"now":     cmdOptions{"ordinal": "-1"},
+	"now":     cmdOptions{"ordinal": "-1", "format": "simple"},
+	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": fmt.Sprintf("%q", time.Now().Unix())},
 	"int":     cmdOptions{"min": "0", "maxr": "100", "ordinal": "-1"},
 	"float":   cmdOptions{"min": "0.0", "maxr": "100.0", "ordinal": "-1"},
 	"ascii":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
@@ -414,6 +415,7 @@ func generateRandomString(length int) string {
 }
 
 func now(oc objectCache, opts cmdOptions) (string, error) {
+	f := opts["format"]
 	o := opts["ordinal"]
 	ord, err := strconv.Atoi(o)
 	if err != nil {
@@ -427,15 +429,68 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		}
 		return cache[ord], nil
 	}
-	now := time.Now().Format(SimpleTimeFormat)
+	now := time.Now()
+	ts := formatTime(&now, f)
 
 	// store it in the cache
 	c, _ := oc["now"]
 	cache := c.([]string)
-	oc["now"] = append(cache, now)
+	oc["now"] = append(cache, ts)
 
-	return now, nil
+	return ts, nil
+}
 
+func datetime(oc objectCache, opts cmdOptions) (string, error) {
+	lb := opts["min"]
+	ub := opts["max"]
+	min, err := strconv.Atoi(lb)
+	if err != nil {
+		return "", err
+	}
+	max, err := strconv.Atoi(ub)
+	if err != nil {
+		return "", err
+	}
+
+	if min > max {
+		return "", errors.New("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
+	}
+
+	f := opts["format"]
+
+	o := opts["ordinal"]
+	ord, err := strconv.Atoi(o)
+	if err != nil {
+		return "", err
+	}
+	if ord >= 0 {
+		c, _ := oc["time"]
+		cache := c.([]string)
+		if len(cache) < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
+		}
+		return cache[ord], nil
+	}
+	ut := rand.Int63n(int64(max)) - int64(min)
+	t := time.Unix(ut, 0)
+	ts := formatTime(&t, f)
+	// store it in the cache
+	c, _ := oc["time"]
+	cache := c.([]string)
+	oc["time"] = append(cache, ts)
+
+	return ts, nil
+}
+
+func formatTime(t *time.Time, format string) string {
+	switch format {
+	case "simple":
+		return t.Format(SimpleTimeFormat)
+	case "simpletz":
+		return t.Format(SimpleTimeWithZoneFormat)
+	default:
+		return t.Format(format)
+	}
 }
 
 func guid(oc objectCache, opts cmdOptions) (string, error) {
