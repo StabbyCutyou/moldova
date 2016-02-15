@@ -32,7 +32,8 @@ type objectCache map[string]interface{}
 type tokenWriter func(*bytes.Buffer, objectCache) error
 
 // Callstack is a list of closures to invoke in order to generate the result of a
-// parsed template
+// parsed template. Callstack is a FIFO implementation, making it more akin to a queue
+// than a stack.
 type Callstack struct {
 	stack []tokenWriter
 	cache objectCache
@@ -44,12 +45,14 @@ func newCallstack() *Callstack {
 	}
 }
 
-// Push is
+// Push will place the given tokenWriter function onto the stack. The first function
+// placed onto the stack will be the first one called when Write is called
 func (c *Callstack) Push(t tokenWriter) {
 	c.stack = append(c.stack, t)
 }
 
-// Write is
+// Write will take a bytes.Buffer pointer and fill it with the results of calling
+// each known function on the Callstack.
 func (c *Callstack) Write(result *bytes.Buffer) error {
 	c.cache = newObjectCache()
 	for _, f := range c.stack {
