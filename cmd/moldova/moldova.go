@@ -5,7 +5,9 @@ import (
 	"errors"
 	"flag"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/StabbyCutyou/moldova"
 )
@@ -26,6 +28,8 @@ func main() {
 	}
 	didErr := false
 	result := &bytes.Buffer{}
+	// Seed the random package
+	rand.Seed(time.Now().Unix())
 	for i := 0; i < cfg.iterations; i++ {
 		err := cs.Write(result)
 		if err != nil {

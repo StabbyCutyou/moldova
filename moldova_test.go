@@ -2,14 +2,22 @@ package moldova
 
 import (
 	"bytes"
+	"math/rand"
+	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
 // TODO Test each random function individually, under a number of inputs to make supported
 // all the options behave as expected.
 
-func TestBuildSQL(t *testing.T) {
+func TestMain(m *testing.M) {
+	rand.Seed(time.Now().Unix())
+	os.Exit(m.Run())
+}
+
+func TestBuildCallstack(t *testing.T) {
 	template := "INSERT INTO floof VALUES ('{guid}','{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
 	cs, err := BuildCallstack(template)
 	if err != nil {
@@ -56,6 +64,19 @@ func TestInteger(t *testing.T) {
 	}
 }
 
+func TestNow(t *testing.T) {
+	template := "{now}"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestNowOrdinal(t *testing.T) {
 	template := "{now:ordinal:1}"
 	cs, err := BuildCallstack(template)
@@ -82,8 +103,21 @@ func TestGuidOrdinal(t *testing.T) {
 	}
 }
 
+func TestTime(t *testing.T) {
+	template := "{time:format:2006-01-02 15:04:05}"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func BenchmarkBuildCallstackRuns(b *testing.B) {
-	template := "INSERT INTO floof VALUES ('{guid}','{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
+	template := "INSERT INTO floof VALUES ('{guid}','{time},'{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
 	var cs *Callstack
 	var err error
 	for n := 0; n < b.N; n++ {
@@ -93,6 +127,10 @@ func BenchmarkBuildCallstackRuns(b *testing.B) {
 			}
 		}
 		result := &bytes.Buffer{}
-		cs.Write(result)
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+		//fmt.Println(result.String())
 	}
 }

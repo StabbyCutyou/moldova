@@ -63,7 +63,7 @@ func (c *Callstack) Write(result *bytes.Buffer) error {
 var defaultOptions = map[string]cmdOptions{
 	"guid":    cmdOptions{"ordinal": "-1"},
 	"now":     cmdOptions{"ordinal": "-1", "format": "simple"},
-	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": fmt.Sprintf("%q", time.Now().Unix())},
+	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": "1455512165"},
 	"int":     cmdOptions{"min": "0", "maxr": "100", "ordinal": "-1"},
 	"float":   cmdOptions{"min": "0.0", "maxr": "100.0", "ordinal": "-1"},
 	"ascii":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
@@ -75,6 +75,7 @@ func newObjectCache() objectCache {
 	return objectCache{
 		"guid":    make([]string, 0),
 		"now":     make([]string, 0),
+		"time":    make([]string, 0),
 		"country": make([]string, 0),
 		"unicode": make([]string, 0),
 		"ascii":   make([]string, 0),
@@ -163,7 +164,9 @@ func optionsToMap(name string, options string) (map[string]string, error) {
 		return m, nil
 	}
 	for _, p := range parts {
-		opt := strings.Split(p, ":")
+		// Some options, like format, can have : in them. Only split the first :, which
+		// should have the arg name, ad a value with an arbitrary number of : inside of it
+		opt := strings.SplitN(p, ":", 2)
 		m[opt[0]] = opt[1]
 	}
 	return m, nil
@@ -179,6 +182,8 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 		return integer(oc, opts)
 	case "now":
 		return now(oc, opts)
+	case "time":
+		return datetime(oc, opts)
 	case "float":
 		return float(oc, opts)
 	case "unicode":
@@ -451,7 +456,6 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	if min > max {
 		return "", errors.New("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
 	}
