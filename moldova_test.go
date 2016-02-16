@@ -288,6 +288,12 @@ var IntegerCases = []TestCase{
 	},
 }
 
+var UnicodeCases = []TestCase{
+	{
+		Template: "unicode",
+	},
+}
+
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
@@ -295,6 +301,7 @@ var AllCases = [][]TestCase{
 	CountryCases,
 	FloatCases,
 	IntegerCases,
+	UnicodeCases,
 }
 
 // TODO Test each random function individually, under a number of inputs to make supported
@@ -340,11 +347,107 @@ func TestAllCases(t *testing.T) {
 	}
 }
 
-func BenchmarkWrites(b *testing.B) {
-	template := "INSERT INTO floof VALUES ('{guid}','{time},'{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
+func BenchmarkGUID(b *testing.B) {
+	c := GUIDCases[0]
 	var cs *Callstack
 	var err error
-	if cs, err = BuildCallstack(template); err != nil {
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkNow(b *testing.B) {
+	c := NowCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkTime(b *testing.B) {
+	c := TimeCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkInteger(b *testing.B) {
+	c := IntegerCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkFloat(b *testing.B) {
+	c := FloatCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkCountry(b *testing.B) {
+	c := CountryCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkUnicode(b *testing.B) {
+	c := UnicodeCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
 	for n := 0; n < b.N; n++ {
