@@ -67,8 +67,8 @@ var defaultOptions = map[string]cmdOptions{
 	"guid":    cmdOptions{"ordinal": "-1"},
 	"now":     cmdOptions{"ordinal": "-1", "format": "simple"},
 	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": "1455512165"},
-	"int":     cmdOptions{"min": "0", "maxr": "100", "ordinal": "-1"},
-	"float":   cmdOptions{"min": "0.0", "maxr": "100.0", "ordinal": "-1"},
+	"int":     cmdOptions{"min": "0", "max": "100", "ordinal": "-1"},
+	"float":   cmdOptions{"min": "0.0", "max": "100.0", "ordinal": "-1"},
 	"ascii":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
 	"unicode": cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
 	"country": cmdOptions{"ordinal": "-1", "case": "up"},
@@ -478,7 +478,17 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		}
 		return cache[ord], nil
 	}
-	ut := rand.Int63n(int64(max)) - int64(min)
+	// get the difference between them
+	diff := max - min
+	var ut int64
+	// Get a random value from 0 to the delta, and add the minimum
+	// Due to an issue with Int63n, you cannot pass it a 0
+	if diff > 0 {
+		ut = rand.Int63n(int64(diff)) + int64(min)
+	} else {
+		ut = int64(min)
+	}
+	// Get the time at that value
 	t := time.Unix(ut, 0)
 	ts := formatTime(&t, f)
 	// store it in the cache

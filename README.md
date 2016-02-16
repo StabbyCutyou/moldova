@@ -117,7 +117,7 @@ Additionally, you can provide your own format string.
 
 {time} also supports the *ordinal:* option
 
-## {integer}
+## {int}
 
 ### Options
 * min : integer < max
@@ -126,9 +126,9 @@ Additionally, you can provide your own format string.
 
 ### Description
 
-Slammer will replace any instance of {integer} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
+Slammer will replace any instance of {int} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
 
-{integer} also supports *ordinal:* option
+{int} also supports *ordinal:* option
 
 ## {float}
 
@@ -184,6 +184,8 @@ Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 countr
 I'll continue to add support for more random value categories. There are also hooks to support ascii-only string generation, but as of yet it is not implemented.
 
 Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |.
+
+Ability to specify a timezone for now / time tokens
 
 # License
 
