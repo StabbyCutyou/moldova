@@ -185,6 +185,8 @@ I'll continue to add support for more random value categories. There are also ho
 
 Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |.
 
+Ability to specify a timezone for now / time tokens
+
 # License
 
 Apache v2 - See LICENSE
