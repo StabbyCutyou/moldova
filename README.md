@@ -106,6 +106,8 @@ Additionally, you can provide your own format string.
 * max : integer > min, unix epoch value
 * format : string, either "simple", "simpletz", or a golang date format string
 * ordinal : integer >= 0
+* zone: A timezone to represent the time in. You can use any value accepted [here](https://golang.org/pkg/time/#LoadLocation)
+
 
 ### Description
 
