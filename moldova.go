@@ -65,8 +65,8 @@ func (c *Callstack) Write(result *bytes.Buffer) error {
 
 var defaultOptions = map[string]cmdOptions{
 	"guid":    cmdOptions{"ordinal": "-1"},
-	"now":     cmdOptions{"ordinal": "-1", "format": "simple"},
-	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": "1455512165"},
+	"now":     cmdOptions{"ordinal": "-1", "format": "simple", "zone": "UTC"},
+	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": "1455512165", "zone": "UTC"},
 	"int":     cmdOptions{"min": "0", "max": "100", "ordinal": "-1"},
 	"float":   cmdOptions{"min": "0.0", "max": "100.0", "ordinal": "-1"},
 	"ascii":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
@@ -424,6 +424,13 @@ func generateRandomString(length int) string {
 
 func now(oc objectCache, opts cmdOptions) (string, error) {
 	f := opts["format"]
+
+	z := opts["zone"]
+	loc, err := time.LoadLocation(z)
+	if err != nil {
+		return "", err
+	}
+
 	o := opts["ordinal"]
 	ord, err := strconv.Atoi(o)
 	if err != nil {
@@ -437,7 +444,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		}
 		return cache[ord], nil
 	}
-	now := time.Now()
+	now := time.Now().In(loc)
 	ts := formatTime(&now, f)
 
 	// store it in the cache
@@ -461,6 +468,12 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	}
 	if min > max {
 		return "", errors.New("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
+	}
+
+	z := opts["zone"]
+	loc, err := time.LoadLocation(z)
+	if err != nil {
+		return "", err
 	}
 
 	f := opts["format"]
@@ -489,7 +502,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		ut = int64(min)
 	}
 	// Get the time at that value
-	t := time.Unix(ut, 0)
+	t := time.Unix(ut, 0).In(loc)
 	ts := formatTime(&t, f)
 	// store it in the cache
 	c, _ := oc["time"]

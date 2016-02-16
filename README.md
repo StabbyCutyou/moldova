@@ -85,6 +85,7 @@ to back-reference existing generated values, for when you need something repeate
 ### Options
 * format : string, either "simple", "simpletz", or a golang date format string
 * ordinal : integer >= 0
+* zone: A timezone to represent the time in. You can use any value accepted [here](https://golang.org/pkg/time/#LoadLocation)
 
 ### Description
 
@@ -184,8 +185,6 @@ Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 countr
 I'll continue to add support for more random value categories. There are also hooks to support ascii-only string generation, but as of yet it is not implemented.
 
 Add proper support for escaping control characters, so they are not interpreted as part of a token. These characters are {, }, :, and |.
-
-Ability to specify a timezone for now / time tokens
 
 # License
 
