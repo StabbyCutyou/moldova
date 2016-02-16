@@ -176,6 +176,62 @@ var CountryCases = []TestCase{
 }
 
 // Placeholders
+var FloatCases = []TestCase{
+	{
+		Template: "{float}",
+		Comparator: func(s string) error {
+			i, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				return err
+			}
+			if i >= 0.0 && i <= 100.0 {
+				return nil
+			}
+			return errors.New("Float out of range for default min/max values")
+		},
+	},
+	{
+		Template: "{float:max:5000.0|min:4999.0}",
+		Comparator: func(s string) error {
+			i, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				return err
+			}
+			if i >= 4999.0 && i <= 5000.0 {
+				return nil
+			}
+			return errors.New("Float out of range for custom min/max values")
+		},
+	},
+	{
+		Template: "{float:max:-5000.0|min:-5001.0}",
+		Comparator: func(s string) error {
+			i, err := strconv.ParseFloat(s, 64)
+			if err != nil {
+				return err
+			}
+			if i >= -5001.0 && i <= -5000.0 {
+				return nil
+			}
+			return errors.New("Float out of range for custom min/max values")
+		},
+	},
+	{
+		Template: "{float}@{float:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Float at position 1 not equal to Float at position 0: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{float}@{float:ordinal:1}",
+		WriteFailure: true,
+	},
+}
+
 var IntegerCases = []TestCase{
 	{
 		Template: "{int}",
@@ -187,7 +243,33 @@ var IntegerCases = []TestCase{
 			if i >= 0 && i <= 100 {
 				return nil
 			}
-			return errors.New("Integer out of range for default min/max values")
+			return errors.New("Int out of range for default min/max values")
+		},
+	},
+	{
+		Template: "{int:max:5000|min:4999}",
+		Comparator: func(s string) error {
+			i, err := strconv.Atoi(s)
+			if err != nil {
+				return err
+			}
+			if i >= 4999 && i <= 5000 {
+				return nil
+			}
+			return errors.New("Int out of range for custom min/max values")
+		},
+	},
+	{
+		Template: "{int:max:-5000|min:-5001}",
+		Comparator: func(s string) error {
+			i, err := strconv.Atoi(s)
+			if err != nil {
+				return err
+			}
+			if i >= -5001 && i <= -5000 {
+				return nil
+			}
+			return errors.New("Int out of range for custom min/max values")
 		},
 	},
 	{
@@ -205,15 +287,14 @@ var IntegerCases = []TestCase{
 		WriteFailure: true,
 	},
 }
-var FloatCases = []TestCase{}
 
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
 	TimeCases,
 	CountryCases,
-	IntegerCases,
 	FloatCases,
+	IntegerCases,
 }
 
 // TODO Test each random function individually, under a number of inputs to make supported
