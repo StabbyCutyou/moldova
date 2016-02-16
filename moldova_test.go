@@ -176,7 +176,21 @@ var CountryCases = []TestCase{
 }
 
 // Placeholders
-var IntegerCases = []TestCase{}
+var IntegerCases = []TestCase{
+	{
+		Template: "{int}",
+		Comparator: func(s string) error {
+			i, err := strconv.Atoi(s)
+			if err != nil {
+				return err
+			}
+			if i >= 0 && i <= 100 {
+				return nil
+			}
+			return errors.New("Integer out of range for default min/max values")
+		},
+	},
+}
 var FloatCases = []TestCase{}
 
 var AllCases = [][]TestCase{

@@ -117,7 +117,7 @@ Additionally, you can provide your own format string.
 
 {time} also supports the *ordinal:* option
 
-## {integer}
+## {int}
 
 ### Options
 * min : integer < max
@@ -126,9 +126,9 @@ Additionally, you can provide your own format string.
 
 ### Description
 
-Slammer will replace any instance of {integer} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
+Slammer will replace any instance of {int} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
 
-{integer} also supports *ordinal:* option
+{int} also supports *ordinal:* option
 
 ## {float}
 
