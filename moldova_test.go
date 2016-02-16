@@ -41,7 +41,7 @@ var GUIDCases = []TestCase{
 			if p[0] == p[1] {
 				return nil
 			}
-			return errors.New("Guid at position 1 not equal to guid at position 0 format: " + p[0] + " " + p[1])
+			return errors.New("Guid at position 1 not equal to guid at position 0: " + p[0] + " " + p[1])
 		},
 	},
 	{
@@ -71,7 +71,7 @@ var NowCases = []TestCase{
 			if p[0] == p[1] {
 				return nil
 			}
-			return errors.New("Now at position 1 not equal to now at position 0 format: " + p[0] + " " + p[1])
+			return errors.New("Now at position 1 not equal to now at position 0: " + p[0] + " " + p[1])
 		},
 	},
 	{
@@ -115,7 +115,7 @@ var TimeCases = []TestCase{
 			if p[0] == p[1] {
 				return nil
 			}
-			return errors.New("Time at position 1 not equal to time at position 0 format: " + p[0] + " " + p[1])
+			return errors.New("Time at position 1 not equal to time at position 0: " + p[0] + " " + p[1])
 		},
 	},
 	{
@@ -166,7 +166,7 @@ var CountryCases = []TestCase{
 			if p[0] == p[1] {
 				return nil
 			}
-			return errors.New("Country at position 1 not equal to country at position 0 format: " + p[0] + " " + p[1])
+			return errors.New("Country at position 1 not equal to country at position 0: " + p[0] + " " + p[1])
 		},
 	},
 	{
@@ -189,6 +189,20 @@ var IntegerCases = []TestCase{
 			}
 			return errors.New("Integer out of range for default min/max values")
 		},
+	},
+	{
+		Template: "{int}@{int:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Int at position 1 not equal to int at position 0: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{int}@{int:ordinal:1}",
+		WriteFailure: true,
 	},
 }
 var FloatCases = []TestCase{}
