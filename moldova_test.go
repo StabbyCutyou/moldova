@@ -82,7 +82,7 @@ var NowCases = []TestCase{
 
 var TimeCases = []TestCase{
 	{
-		Template: "{time:min:1|max:1|format:simple}",
+		Template: "{time:min:1|max:1|format:simple|zone:EST}",
 		Comparator: func(s string) error {
 			if s == "1969-12-31 19:00:01" {
 				return nil
@@ -91,7 +91,7 @@ var TimeCases = []TestCase{
 		},
 	},
 	{
-		Template: "{time:min:1|max:1|format:simpletz}",
+		Template: "{time:min:1|max:1|format:simpletz|zone:EST}",
 		Comparator: func(s string) error {
 			if s == "1969-12-31 19:00:01 -0500" {
 				return nil
@@ -100,9 +100,9 @@ var TimeCases = []TestCase{
 		},
 	},
 	{
-		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05}",
+		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05}|zone:EST",
 		Comparator: func(s string) error {
-			if s == "1969//12//31@@19_00_01" {
+			if s == "1970//01//01@@00_00_01" {
 				return nil
 			}
 			return errors.New("Time value was not the expected value")
@@ -291,10 +291,7 @@ var IntegerCases = []TestCase{
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
-	// The TimeCases collection does not run correctly on Travis-ci due to poor
-	// assumptions baked into the tests, revolving around what time zone the machine
-	// running the test is on. I've got a fix for this in the roadmap
-	//TimeCases,
+	TimeCases,
 	CountryCases,
 	FloatCases,
 	IntegerCases,
