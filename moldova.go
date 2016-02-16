@@ -478,7 +478,17 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		}
 		return cache[ord], nil
 	}
-	ut := rand.Int63n(int64(max)) - int64(min)
+	// get the difference between them
+	diff := max - min
+	var ut int64
+	// Get a random value from 0 to the delta, and add the minimum
+	// Due to an issue with Int63n, you cannot pass it a 0
+	if diff > 0 {
+		ut = rand.Int63n(int64(diff)) + int64(min)
+	} else {
+		ut = int64(min)
+	}
+	// Get the time at that value
 	t := time.Unix(ut, 0)
 	ts := formatTime(&t, f)
 	// store it in the cache

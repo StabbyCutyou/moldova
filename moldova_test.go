@@ -50,6 +50,41 @@ var GUIDCases = []TestCase{
 	},
 }
 
+var NowCases = []TestCase{
+	{
+		// There is no proper deterministic way to test what the value of now is, without
+		// something like rubys timecop (but the go-equivalent is not viable) or relying
+		// on luck, which will run out if tests are run at just the wrong moment.
+		// Therefore, for the basic test, i'm just asserting nothing went wrong for now.
+		Template: "{now}",
+		Comparator: func(s string) error {
+			if len(s) > 0 {
+				return nil
+			}
+			return errors.New("Guid not in correct format: " + s)
+		},
+	},
+	{
+		Template: "{now}@{now:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Now at position 1 not equal to now at position 0 format: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{now}@{now:ordinal:1}",
+		WriteFailure: true,
+	},
+}
+
+var AllCases = [][]TestCase{
+	GUIDCases,
+	NowCases,
+}
+
 // TODO Test each random function individually, under a number of inputs to make supported
 // all the options behave as expected.
 
@@ -58,31 +93,33 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestGuidCases(t *testing.T) {
-	for i, c := range GUIDCases {
-		cs, err := BuildCallstack(c.Template)
-		// If we get an error and weren't expecting it
-		// Or, if we didn't get one but were expecting it
-		if err != nil && !c.ParseFailure {
-			t.Error(err)
-		} else if err == nil && c.ParseFailure {
-			t.Error("Expected to encounter Parse Failure, but did not for Test Case ", c.Template)
-		}
-
-		result := &bytes.Buffer{}
-		err = cs.Write(result)
-
-		// If we get an error and weren't expecting it
-		// Or, if we didn't get one but were expecting it
-		if err != nil && !c.WriteFailure {
-			t.Error(err)
-		} else if err == nil && c.ParseFailure {
-			t.Error("Expected to encounter Write Failure, but did not for Test Case ", i)
-		}
-
-		if c.Comparator != nil {
-			if err := c.Comparator(result.String()); err != nil {
+func TestAllCases(t *testing.T) {
+	for _, cs := range AllCases {
+		for _, c := range cs {
+			cs, err := BuildCallstack(c.Template)
+			// If we get an error and weren't expecting it
+			// Or, if we didn't get one but were expecting it
+			if err != nil && !c.ParseFailure {
 				t.Error(err)
+			} else if err == nil && c.ParseFailure {
+				t.Error("Expected to encounter Parse Failure, but did not for Test Case ", c.Template)
+			}
+
+			result := &bytes.Buffer{}
+			err = cs.Write(result)
+
+			// If we get an error and weren't expecting it
+			// Or, if we didn't get one but were expecting it
+			if err != nil && !c.WriteFailure {
+				t.Error(err)
+			} else if err == nil && c.ParseFailure {
+				t.Error("Expected to encounter Write Failure, but did not for Test Case ", c.Template)
+			}
+
+			if c.Comparator != nil {
+				if err := c.Comparator(result.String()); err != nil {
+					t.Error(err)
+				}
 			}
 		}
 	}
@@ -135,34 +172,8 @@ func TestInteger(t *testing.T) {
 	}
 }
 
-func TestNow(t *testing.T) {
-	template := "{now}"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestNowOrdinal(t *testing.T) {
-	template := "{now:ordinal:1}"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err == nil {
-		t.Error("Did not return an error on an invalid {now} ordinal")
-	}
-}
-
 func TestTime(t *testing.T) {
-	template := "{time:format:2006-01-02 15:04:05}"
+	template := "{time:min:1|max:1|format:2006-01-02 15:04:05}"
 	cs, err := BuildCallstack(template)
 	if err != nil {
 		t.Error(err)
