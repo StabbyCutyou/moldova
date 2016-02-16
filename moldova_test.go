@@ -80,9 +80,112 @@ var NowCases = []TestCase{
 	},
 }
 
+var TimeCases = []TestCase{
+	{
+		Template: "{time:min:1|max:1|format:simple}",
+		Comparator: func(s string) error {
+			if s == "1969-12-31 19:00:01" {
+				return nil
+			}
+			return errors.New("Time value was not the expected value")
+		},
+	},
+	{
+		Template: "{time:min:1|max:1|format:simpletz}",
+		Comparator: func(s string) error {
+			if s == "1969-12-31 19:00:01 -0500" {
+				return nil
+			}
+			return errors.New("Time value was not the expected value")
+		},
+	},
+	{
+		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05}",
+		Comparator: func(s string) error {
+			if s == "1969//12//31@@19_00_01" {
+				return nil
+			}
+			return errors.New("Time value was not the expected value")
+		},
+	},
+	{
+		Template: "{time}@{time:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Time at position 1 not equal to time at position 0 format: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{time}@{time:ordinal:1}",
+		WriteFailure: true,
+	},
+}
+
+var CountryCases = []TestCase{
+	{
+		Template: "{country}",
+		Comparator: func(s string) error {
+			// TODO better check here in case we ever support different types of country codes
+			if len(s) == 2 {
+				return nil
+			}
+			return errors.New("Invalid country code generated somehow")
+		},
+	},
+	{
+		Template: "{country:case:up}",
+		Comparator: func(s string) error {
+			// Since I can't know which country comes out, i'll invert the result
+			// If the ToLowered result is not the same as the original result, we know
+			// that the original was successfully output in upper case
+			if strings.ToLower(s) != s {
+				return nil
+			}
+			return errors.New("Country was returned in lowercase, but was requested in uppercase")
+		},
+	},
+	{
+		Template: "{country:case:down}",
+		Comparator: func(s string) error {
+			// Since I can't know which country comes out, i'll invert the result
+			// If the ToLowered result is not the same as the original result, we know
+			// that the original was successfully output in upper case
+			if strings.ToUpper(s) != s {
+				return nil
+			}
+			return errors.New("Country was returned in uppercase, but was requested in lowercase")
+		},
+	},
+	{
+		Template: "{country}@{country:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Country at position 1 not equal to country at position 0 format: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{country}@{country:ordinal:1}",
+		WriteFailure: true,
+	},
+}
+
+// Placeholders
+var IntegerCases = []TestCase{}
+var FloatCases = []TestCase{}
+
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
+	TimeCases,
+	CountryCases,
+	IntegerCases,
+	FloatCases,
 }
 
 // TODO Test each random function individually, under a number of inputs to make supported
@@ -94,6 +197,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestAllCases(t *testing.T) {
+	// TODO The library should be threadsafe, I should go wide here to run all specs
+	// in parallel, like the natural tests would be. Channel + waitgroup to collect
+	// and report on errors once they all finish
 	for _, cs := range AllCases {
 		for _, c := range cs {
 			cs, err := BuildCallstack(c.Template)
@@ -125,32 +231,6 @@ func TestAllCases(t *testing.T) {
 	}
 }
 
-func TestBuildCallstack(t *testing.T) {
-	template := "INSERT INTO floof VALUES ('{guid}','{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func TestCountries(t *testing.T) {
-	template := "INSERT INTO `floop` VALUES ('{country}','{country:case:up|ordinal:0}','{country}','{country:case:down|ordinal:1}')"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestInteger(t *testing.T) {
 	template := "{int:min:5|max:6}"
 	cs, err := BuildCallstack(template)
@@ -172,29 +252,14 @@ func TestInteger(t *testing.T) {
 	}
 }
 
-func TestTime(t *testing.T) {
-	template := "{time:min:1|max:1|format:2006-01-02 15:04:05}"
-	cs, err := BuildCallstack(template)
-	if err != nil {
-		t.Error(err)
-	}
-	result := &bytes.Buffer{}
-	err = cs.Write(result)
-	if err != nil {
-		t.Error(err)
-	}
-}
-
-func BenchmarkBuildCallstackRuns(b *testing.B) {
+func BenchmarkWrites(b *testing.B) {
 	template := "INSERT INTO floof VALUES ('{guid}','{time},'{guid:ordinal:0}','{country}',{int:min:-2000|max:0},{int:min:100|max:1000},{float:min:-1000.0|max:-540.0},{int:min:1|max:40},'{now}','{now:ordinal:0}','{unicode:length:2|case:up}',NULL,-3)"
 	var cs *Callstack
 	var err error
+	if cs, err = BuildCallstack(template); err != nil {
+		b.Error(err)
+	}
 	for n := 0; n < b.N; n++ {
-		if n == 0 {
-			if cs, err = BuildCallstack(template); err != nil {
-				b.Error(err)
-			}
-		}
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
 		if err != nil {
