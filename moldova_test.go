@@ -290,7 +290,45 @@ var IntegerCases = []TestCase{
 
 var UnicodeCases = []TestCase{
 	{
-		Template: "unicode",
+		Template: "{unicode}",
+		Comparator: func(s string) error {
+			if len([]rune(s)) == 2 {
+				return nil
+			}
+			return errors.New("Unicode strength not the correct length")
+		},
+	},
+	{
+		Template: "{unicode:length:10}",
+		Comparator: func(s string) error {
+			if len([]rune(s)) == 10 {
+				return nil
+			}
+			return errors.New("Unicode string not the correct length")
+		},
+	},
+	{
+		Template: "{unicode:length:10|case:up}",
+		Comparator: func(s string) error {
+			if len([]rune(s)) == 10 || strings.ToLower(s) != strings.ToUpper(s) {
+				return nil
+			}
+			return errors.New("Unicode string not the correct length")
+		},
+	},
+	{
+		Template: "{unicode}@{unicode:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("Unicode at position 1 not equal to Unicode at position 0: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{unicode}@{unicode:ordinal:1}",
+		WriteFailure: true,
 	},
 }
 
