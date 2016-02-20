@@ -3,6 +3,7 @@ package moldova
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"strconv"
@@ -100,9 +101,9 @@ var TimeCases = []TestCase{
 		},
 	},
 	{
-		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05}|zone:EST",
+		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05|zone:EST}",
 		Comparator: func(s string) error {
-			if s == "1970//01//01@@00_00_01" {
+			if s == "1969//12//31@@19_00_01" {
 				return nil
 			}
 			return errors.New("Time value was not the expected value")
@@ -382,6 +383,24 @@ func TestAllCases(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestGeneratedStringLength(t *testing.T) {
+	template := "Hey I'm {int:min:1|max:9} years old"
+	sampleresult := "Hey I'm 1 years old"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
+	if err != nil {
+		t.Error(err)
+	}
+	if len([]rune(sampleresult)) != len([]rune(result.String())) {
+		fmt.Println(result.String())
+		t.Error("Missing parts of the rendered templtate")
 	}
 }
 
