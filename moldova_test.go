@@ -101,9 +101,9 @@ var TimeCases = []TestCase{
 		},
 	},
 	{
-		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05}|zone:EST",
+		Template: "{time:min:1|max:1|format:2006//01//02@@15_04_05|zone:EST}",
 		Comparator: func(s string) error {
-			if s == "1970//01//01@@00_00_01" {
+			if s == "1969//12//31@@19_00_01" {
 				return nil
 			}
 			return errors.New("Time value was not the expected value")
