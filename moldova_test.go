@@ -3,6 +3,7 @@ package moldova
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math/rand"
 	"os"
 	"strconv"
@@ -382,6 +383,24 @@ func TestAllCases(t *testing.T) {
 				}
 			}
 		}
+	}
+}
+
+func TestGeneratedStringLength(t *testing.T) {
+	template := "Hey I'm {int:min:1|max:9} years old"
+	sampleresult := "Hey I'm 1 years old"
+	cs, err := BuildCallstack(template)
+	if err != nil {
+		t.Error(err)
+	}
+	result := &bytes.Buffer{}
+	err = cs.Write(result)
+	if err != nil {
+		t.Error(err)
+	}
+	if len([]rune(sampleresult)) != len([]rune(result.String())) {
+		fmt.Println(result.String())
+		t.Error("Missing parts of the rendered templtate")
 	}
 }
 

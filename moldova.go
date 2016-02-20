@@ -137,6 +137,14 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 		}
 	}
 
+	// If there is anything remaining in word buffer, add the final call to the stack
+	s := wordBuffer.String()
+	f := func(result *bytes.Buffer, cache objectCache) error {
+		result.WriteString(s)
+		return nil
+	}
+	stack.Push(f)
+
 	return stack, nil
 }
 
