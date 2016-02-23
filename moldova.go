@@ -65,16 +65,14 @@ func (c *Callstack) Write(result *bytes.Buffer) error {
 
 // Returns option value as integer
 func (cmd cmdOptions) getInt(n string) (int, error) {
-	lb := cmd[n]
-	val, err := strconv.Atoi(lb)
-	return val, err
+	v := cmd[n]
+	return strconv.Atoi(v)
 }
 
 // Returns option value as float64
 func (cmd cmdOptions) getFloat(n string) (float64, error) {
-	lb := cmd[n]
-	val, err := strconv.ParseFloat(lb, 64)
-	return val, err
+	v := cmd[n]
+	return strconv.ParseFloat(v, 64)
 }
 
 var defaultOptions = map[string]cmdOptions{
