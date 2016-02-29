@@ -411,6 +411,7 @@ func BenchmarkGUID(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
@@ -427,6 +428,7 @@ func BenchmarkNow(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
@@ -443,6 +445,7 @@ func BenchmarkTime(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
@@ -459,6 +462,7 @@ func BenchmarkInteger(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
@@ -475,6 +479,7 @@ func BenchmarkFloat(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
@@ -491,6 +496,7 @@ func BenchmarkCountry(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
@@ -507,6 +513,7 @@ func BenchmarkUnicode(b *testing.B) {
 	if cs, err = BuildCallstack(c.Template); err != nil {
 		b.Error(err)
 	}
+	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
 		result := &bytes.Buffer{}
 		err = cs.Write(result)
