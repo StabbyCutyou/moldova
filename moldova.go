@@ -63,6 +63,18 @@ func (c *Callstack) Write(result *bytes.Buffer) error {
 	return nil
 }
 
+// Returns option value as integer
+func (cmd cmdOptions) getInt(n string) (int, error) {
+	v := cmd[n]
+	return strconv.Atoi(v)
+}
+
+// Returns option value as float64
+func (cmd cmdOptions) getFloat(n string) (float64, error) {
+	v := cmd[n]
+	return strconv.ParseFloat(v, 64)
+}
+
 var defaultOptions = map[string]cmdOptions{
 	"guid":    cmdOptions{"ordinal": "-1"},
 	"now":     cmdOptions{"ordinal": "-1", "format": "simple", "zone": "UTC"},
@@ -211,18 +223,15 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 // give them proper comments, so that GoDoc can also document them
 
 func integer(oc objectCache, opts cmdOptions) (string, error) {
-	lb := opts["min"]
-	ub := opts["max"]
-	min, err := strconv.Atoi(lb)
+	min, err := opts.getInt("min")
 	if err != nil {
 		return "", err
 	}
-	max, err := strconv.Atoi(ub)
+	max, err := opts.getInt("max")
 	if err != nil {
 		return "", err
 	}
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
@@ -273,18 +282,15 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 }
 
 func float(oc objectCache, opts cmdOptions) (string, error) {
-	lb := opts["min"]
-	ub := opts["max"]
-	min, err := strconv.ParseFloat(lb, 64)
+	min, err := opts.getFloat("min")
 	if err != nil {
 		return "", err
 	}
-	max, err := strconv.ParseFloat(ub, 64)
+	max, err := opts.getFloat("max")
 	if err != nil {
 		return "", err
 	}
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
@@ -335,8 +341,7 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 
 func country(oc objectCache, opts cmdOptions) (string, error) {
 	cCase := opts["case"]
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
@@ -372,15 +377,13 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 
 func unicode(oc objectCache, opts cmdOptions) (string, error) {
 	cCase := opts["case"]
-	n := opts["length"]
-	num, err := strconv.Atoi(n)
+	num, err := opts.getInt("length")
 	if err != nil {
 		return "", err
 	} else if num <= 0 {
 		return "", errors.New("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
 	}
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
@@ -439,8 +442,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
@@ -464,13 +466,11 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 }
 
 func datetime(oc objectCache, opts cmdOptions) (string, error) {
-	lb := opts["min"]
-	ub := opts["max"]
-	min, err := strconv.Atoi(lb)
+	min, err := opts.getInt("min")
 	if err != nil {
 		return "", err
 	}
-	max, err := strconv.Atoi(ub)
+	max, err := opts.getInt("max")
 	if err != nil {
 		return "", err
 	}
@@ -486,8 +486,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 
 	f := opts["format"]
 
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
@@ -528,8 +527,7 @@ func formatTime(t *time.Time, format string) string {
 }
 
 func guid(oc objectCache, opts cmdOptions) (string, error) {
-	o := opts["ordinal"]
-	ord, err := strconv.Atoi(o)
+	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
