@@ -385,6 +385,18 @@ var LastNameCases = []TestCase{
 	},
 }
 
+var FullNameCases = []TestCase{
+	{
+		Template: "{firstname} {lastname}",
+		Comparator: func(s string) error {
+			if len(s) > 0 {
+				return nil
+			}
+			return errors.New("First / Last Name string not the correct length")
+		},
+	},
+}
+
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
@@ -395,6 +407,7 @@ var AllCases = [][]TestCase{
 	UnicodeCases,
 	FirstNameCases,
 	LastNameCases,
+	FullNameCases,
 }
 
 // TODO Test each random function individually, under a number of inputs to make supported
@@ -577,7 +590,7 @@ func BenchmarkUnicode(b *testing.B) {
 	}
 }
 
-func BenchmarkFirstNme(b *testing.B) {
+func BenchmarkFirstName(b *testing.B) {
 	c := FirstNameCases[0]
 	var cs *Callstack
 	var err error
@@ -594,8 +607,25 @@ func BenchmarkFirstNme(b *testing.B) {
 	}
 }
 
-func BenchmarkLastNme(b *testing.B) {
+func BenchmarkLastName(b *testing.B) {
 	c := FirstNameCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkFullName(b *testing.B) {
+	c := FullNameCases[0]
 	var cs *Callstack
 	var err error
 	if cs, err = BuildCallstack(c.Template); err != nil {

@@ -220,7 +220,7 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 	case "firstname":
 		return firstname(oc, opts)
 	case "lastname":
-		return firstname(oc, opts)
+		return lastname(oc, opts)
 	}
 	// TODO make this an error
 	return "", nil
