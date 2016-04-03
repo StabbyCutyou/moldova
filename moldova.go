@@ -76,26 +76,30 @@ func (cmd cmdOptions) getFloat(n string) (float64, error) {
 }
 
 var defaultOptions = map[string]cmdOptions{
-	"guid":    cmdOptions{"ordinal": "-1"},
-	"now":     cmdOptions{"ordinal": "-1", "format": "simple", "zone": "UTC"},
-	"time":    cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": "1455512165", "zone": "UTC"},
-	"int":     cmdOptions{"min": "0", "max": "100", "ordinal": "-1"},
-	"float":   cmdOptions{"min": "0.0", "max": "100.0", "ordinal": "-1"},
-	"ascii":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
-	"unicode": cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
-	"country": cmdOptions{"ordinal": "-1", "case": "up"},
+	"guid":      cmdOptions{"ordinal": "-1"},
+	"now":       cmdOptions{"ordinal": "-1", "format": "simple", "zone": "UTC"},
+	"time":      cmdOptions{"ordinal": "-1", "format": "simple", "min": "0", "max": "1455512165", "zone": "UTC"},
+	"int":       cmdOptions{"min": "0", "max": "100", "ordinal": "-1"},
+	"float":     cmdOptions{"min": "0.0", "max": "100.0", "ordinal": "-1"},
+	"ascii":     cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
+	"unicode":   cmdOptions{"length": "2", "case": "down", "ordinal": "-1"},
+	"country":   cmdOptions{"ordinal": "-1", "case": "up"},
+	"firstname": cmdOptions{"ordinal": "-1", "language": English},
+	"lastname":  cmdOptions{"ordinal": "-1", "language": English},
 }
 
 func newObjectCache() objectCache {
 	return objectCache{
-		"guid":    make([]string, 0),
-		"now":     make([]string, 0),
-		"time":    make([]string, 0),
-		"country": make([]string, 0),
-		"unicode": make([]string, 0),
-		"ascii":   make([]string, 0),
-		"int":     make([]int, 0),
-		"float":   make([]float64, 0),
+		"guid":      make([]string, 0),
+		"now":       make([]string, 0),
+		"time":      make([]string, 0),
+		"country":   make([]string, 0),
+		"unicode":   make([]string, 0),
+		"ascii":     make([]string, 0),
+		"int":       make([]int, 0),
+		"float":     make([]float64, 0),
+		"firstname": make([]string, 0),
+		"lastname":  make([]string, 0),
 	}
 }
 
@@ -213,6 +217,10 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 		return unicode(oc, opts)
 	case "country":
 		return country(oc, opts)
+	case "firstname":
+		return firstname(oc, opts)
+	case "lastname":
+		return firstname(oc, opts)
 	}
 	// TODO make this an error
 	return "", nil
@@ -354,7 +362,7 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 		}
 		country := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
-		if c == "down" {
+		if cCase == "down" {
 			return strings.ToLower(country), nil
 		}
 		return country, nil
@@ -396,7 +404,7 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 		}
 		str := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
-		if c == "up" {
+		if cCase == "up" {
 			return strings.ToUpper(str), nil
 		}
 		return str, nil
@@ -548,4 +556,53 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 
 	return guid, nil
 
+}
+
+func firstname(oc objectCache, opts cmdOptions) (string, error) {
+	return name("firstname", FirstNames, oc, opts)
+}
+
+func lastname(oc objectCache, opts cmdOptions) (string, error) {
+	return name("lastname", LastNames, oc, opts)
+}
+
+func name(nameType string, names []*Name, oc objectCache, opts cmdOptions) (string, error) {
+	cCase := opts["case"]
+	lang := opts["language"]
+	ord, err := opts.getInt("ordinal")
+	if err != nil {
+		return "", err
+	}
+
+	if ord >= 0 {
+		c, _ := oc[nameType]
+		cache := c.([]string)
+		if len(cache)-1 < ord {
+			return "", fmt.Errorf("Ordinal %d has not yet been encountered for %s values. Please check your input string", ord, nameType)
+		}
+		str := cache[ord]
+		// Names go into the cache as camel case, check if we need to swap it
+		if cCase == "up" {
+			return strings.ToUpper(str), nil
+		} else if cCase == "down" {
+			return strings.ToLower(str), nil
+		}
+		return str, nil
+	}
+
+	// Generate a new one
+	n := rand.Intn(len(names))
+	name := names[n]
+	result := name.GetSpelling(lang)
+
+	// store it in the cache
+	ca := oc[nameType]
+	cache := ca.([]string)
+	oc[nameType] = append(cache, result)
+	if cCase == "up" {
+		return strings.ToUpper(string(result)), nil
+	} else if cCase == "down" {
+		return strings.ToLower(string(result)), nil
+	}
+	return result, nil
 }
