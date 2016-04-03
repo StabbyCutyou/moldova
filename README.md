@@ -69,7 +69,7 @@ It is only necessary to provide a | when you have further arguments to provide. 
 
 ### Description
 
-Slammer will replace any instance of {guid} with a GUID/UUID
+Moldova will replace any instance of {guid} with a GUID/UUID
 
 If you provide the *ordinal:* option, for the current line of text being generated,
 you can have the Slammer insert an existing value, rather than a new one. For
@@ -89,7 +89,7 @@ to back-reference existing generated values, for when you need something repeate
 
 ### Description
 
-Slammer will replace any instance of {now} with a string representation of Golangs
+Moldova will replace any instance of {now} with a string representation of Golangs
 time.Now() function, formatted per the provided date format. There are 2 built in formats, for convenience, that are compatible with many databases.
 
 * simple - "2006-01-02 15:04:05"
@@ -111,7 +111,7 @@ Additionally, you can provide your own format string.
 
 ### Description
 
-Slammer will replace any instance of {time} with a string representation of a random time, between min and max in terms of Unix Epoch values. The defaults are between 0, and roughly Now (determined at runtime) There are 2 built in formats, for convenience, that are compatible with many databases.
+Moldova will replace any instance of {time} with a string representation of a random time, between min and max in terms of Unix Epoch values. The defaults are between 0, and roughly Now (determined at runtime) There are 2 built in formats, for convenience, that are compatible with many databases.
 
 * simple - "2006-01-02 15:04:05"
 * simpletz - "2006-01-02 15:04:05 -0700"
@@ -129,7 +129,7 @@ Additionally, you can provide your own format string.
 
 ### Description
 
-Slammer will replace any instance of {int} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
+Moldova will replace any instance of {int} with a random int value, optionally between the range provided. The defaults, if not provided, are 0 to 100.
 
 {int} also supports *ordinal:* option
 
@@ -142,7 +142,7 @@ Slammer will replace any instance of {int} with a random int value, optionally b
 
 ### Description
 
-Slammer will replace any instance of {float} with a random Float64, optionally between the range provided. The defaults, if not provided, are 0.0 to 100.0
+Moldova will replace any instance of {float} with a random Float64, optionally between the range provided. The defaults, if not provided, are 0.0 to 100.0
 
 {float} also supports *ordinal:* option
 
@@ -155,7 +155,7 @@ Slammer will replace any instance of {float} with a random Float64, optionally b
 
 ### Description
 
-Slammer will replace any instance of {unicode} with a randomly generated set of unicode
+Moldova will replace any instance of {unicode} with a randomly generated set of unicode
 characters, of a length specified by :number. The default value is 2.
 
 {unicode} also takes the :case argument, which is either 'up' or 'down', like so
@@ -168,6 +168,62 @@ characters, of a length specified by :number. The default value is 2.
 Only a certain subset of unicode character ranges are supported by default, as defined
 in the moldova/data/unicode.go file.
 
+## {firstname}
+
+### Options
+* language : any string value
+* case : "up" or "down"
+* ordinal : integer >= 0
+
+### Description
+
+Moldova will replace any instance of {firstname} with a randomly generated first
+name, from the list defined in data/names.go
+
+{firstname} takes a :langage argument, which can be any of the supported language
+strings in data/names.go. If the chosen name does not have an entry for the selected
+language, the configured default will be used in it's place. For exmaple:
+
+{firstname:language:romanian}
+
+{firstname} also takes the :case argument, which is either 'up' or 'down', like so
+
+{firstname:case:up}
+{firstname:case:down}
+
+{firstname} also supports *:ordinal* option
+
+Only a certain subset of unicode character ranges are supported by default, as defined
+in the moldova/data/unicode.go file.
+
+## {lastname}
+
+### Options
+* language : any string value
+* case : "up" or "down"
+* ordinal : integer >= 0
+
+### Description
+
+Moldova will replace any instance of {firstname} with a randomly generated first
+name, from the list defined in data/names.go
+
+{lastname} takes a :langage argument, which can be any of the supported language
+strings in data/names.go. If the chosen name does not have an entry for the selected
+language, the configured default will be used in it's place. For example:
+
+{lastname:language:romanian}
+
+{lastname} also takes the :case argument, which is either 'up' or 'down', like so
+
+{lastname:case:up}
+{lastname:case:down}
+
+{lastname} also supports *:ordinal* option
+
+Only a certain subset of unicode character ranges are supported by default, as defined
+in the moldova/data/unicode.go file.
+
 ## {country}
 
 ### Options
@@ -176,7 +232,7 @@ in the moldova/data/unicode.go file.
 
 ### Description
 
-Slammer will replace any instance of {country} with an ISO 3166-1 alpha-2 country code.
+Moldova will replace any instance of {country} with an ISO 3166-1 alpha-2 country code.
 
 {country} supports the same *case:* argument as {unicode}. The default value is "up"
 
