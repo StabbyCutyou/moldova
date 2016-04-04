@@ -141,7 +141,7 @@ type spellings map[string]string
 // order in which they were passed in
 func (n *Name) GetSpelling(languages ...string) string {
 	for _, l := range languages {
-		if name, ok := n.spellings[l]; ok {
+		if name, ok := n.spellings[l]; ok && name != "" {
 			return name
 		}
 	}
