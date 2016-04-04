@@ -72,7 +72,7 @@ It is only necessary to provide a | when you have further arguments to provide. 
 Moldova will replace any instance of {guid} with a GUID/UUID
 
 If you provide the *ordinal:* option, for the current line of text being generated,
-you can have the Slammer insert an existing value, rather than a new one. For
+you can have Moldova insert an existing value, rather than a new one. For
 example:
 
 "{guid} - {guid:ordinal:0}"
