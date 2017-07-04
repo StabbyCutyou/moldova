@@ -109,6 +109,7 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 	stack := newCallstack()
 	wordBuffer := &bytes.Buffer{}
 	foundWord := false
+	pos := 0
 	for _, c := range inputTemplate {
 		if !foundWord && c == '{' {
 			// We're starting a word to parse
@@ -138,7 +139,7 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 			// Build the closure that will invoke resolveWord
 			f := func(result *bytes.Buffer, cache objectCache) error {
 				val := ""
-				if val, err = resolveWord(cache, parts[0], opts); err != nil {
+				if val, err = resolveWord(cache, parts[0], pos, opts); err != nil {
 					return err
 				}
 				result.WriteString(val)
@@ -150,6 +151,8 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 			// Straight pass through
 			wordBuffer.WriteRune(c)
 		}
+		// Increment the position tracker, used for returning errors to the user
+		pos++
 	}
 
 	// If there is anything remaining in word buffer, add the final call to the stack
@@ -198,7 +201,7 @@ func optionsToMap(name string, options string) (map[string]string, error) {
 	return m, nil
 }
 
-func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
+func resolveWord(oc objectCache, word string, pos int, opts cmdOptions) (string, error) {
 	// If there were options provided, convert them to a lookup map prior to invoking
 	// a randomizer.
 	switch word {
@@ -221,8 +224,10 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 	case "lastname":
 		return lastname(oc, opts)
 	}
-	// TODO make this an error
-	return "", UnsupportedTokenError(fmt.Sprintf("the token %s is not recognized, check for typos", word))
+	// pos is the 0 pos of the } in the word, but word doesn't contain { or }, so subtract 2 to get the
+	// the proper number of character to remove from the original pos to get to where the { is
+	sPos := (pos - len(word)) - 2
+	return "", UnsupportedTokenError(fmt.Sprintf("the token %s at position %d is not recognized, check for typos", word, sPos))
 }
 
 // TODO All the below functions need way better commenting and parameter annotations
