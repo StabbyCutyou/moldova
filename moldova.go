@@ -225,7 +225,7 @@ func resolveWord(oc objectCache, word string, pos int, opts cmdOptions) (string,
 		return lastname(oc, opts)
 	}
 	// pos is the 0 pos of the } in the word, but word doesn't contain { or }, so subtract 2 to get the
-	// the proper number of character to remove from the original pos to get to where the { is
+	// the proper number of characters to remove from the original pos to get to where the { is
 	sPos := (pos - len(word)) - 2
 	return "", UnsupportedTokenError(fmt.Sprintf("the token %s at position %d is not recognized, check for typos", word, sPos))
 }
