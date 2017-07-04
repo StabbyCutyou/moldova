@@ -109,11 +109,13 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 	stack := newCallstack()
 	wordBuffer := &bytes.Buffer{}
 	foundWord := false
-	pos := 0
-	for _, c := range inputTemplate {
+	wordStart := 0
+	for i, c := range inputTemplate {
 		if !foundWord && c == '{' {
 			// We're starting a word to parse
 			foundWord = true
+			// Track the position of where the word started, for potential error reporting
+			wordStart = i
 			// Dump the current buffer into a closure
 			// Assigning to 'cb', ClosureBuster, will get around this issue
 			// THANKS .NET PRIOR TO 4.0 FOR TEACHING ME ABOUT ACCESS TO A MODIFIED CLOSURE!
@@ -139,7 +141,7 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 			// Build the closure that will invoke resolveWord
 			f := func(result *bytes.Buffer, cache objectCache) error {
 				val := ""
-				if val, err = resolveWord(cache, parts[0], pos, opts); err != nil {
+				if val, err = resolveWord(cache, parts[0], wordStart, opts); err != nil {
 					return err
 				}
 				result.WriteString(val)
@@ -151,8 +153,6 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 			// Straight pass through
 			wordBuffer.WriteRune(c)
 		}
-		// Increment the position tracker, used for returning errors to the user
-		pos++
 	}
 
 	// If there is anything remaining in word buffer, add the final call to the stack
@@ -224,10 +224,7 @@ func resolveWord(oc objectCache, word string, pos int, opts cmdOptions) (string,
 	case "lastname":
 		return lastname(oc, opts)
 	}
-	// pos is the 0 pos of the } in the word, but word doesn't contain { or }, so subtract 2 to get the
-	// the proper number of characters to remove from the original pos to get to where the { is
-	sPos := (pos - len(word)) - 2
-	return "", UnsupportedTokenError(fmt.Sprintf("the token %s at position %d is not recognized, check for typos", word, sPos))
+	return "", UnsupportedTokenError(fmt.Sprintf("the token %s at position %d is not recognized, check for typos", word, pos))
 }
 
 // TODO All the below functions need way better commenting and parameter annotations
@@ -271,9 +268,9 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 		// if the range is entirely negative
 		negateResult = true
 		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		oldLower := min
+		//oldLower := min
 		min = -max
-		max = -oldLower
+		//max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
@@ -330,9 +327,9 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 		// if the range is entirely negative
 		negateResult = true
 		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		oldLower := min
+		//oldLower := min
 		min = -max
-		max = -oldLower
+		//max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
@@ -359,7 +356,7 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 	}
 
 	if ord >= 0 {
-		c, _ := oc["country"]
+		c := oc["country"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
 			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord))
@@ -399,7 +396,7 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 	}
 
 	if ord >= 0 {
-		c, _ := oc["unicode"]
+		c := oc["unicode"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
 			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord))
@@ -457,7 +454,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if ord >= 0 {
-		c, _ := oc["now"]
+		c := oc["now"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
 			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord))
@@ -468,7 +465,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 	ts := formatTime(&now, f)
 
 	// store it in the cache
-	c, _ := oc["now"]
+	c := oc["now"]
 	cache := c.([]string)
 	oc["now"] = append(cache, ts)
 
@@ -500,7 +497,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if ord >= 0 {
-		c, _ := oc["time"]
+		c := oc["time"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
 			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord))
@@ -521,7 +518,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	t := time.Unix(ut, 0).In(loc)
 	ts := formatTime(&t, f)
 	// store it in the cache
-	c, _ := oc["time"]
+	c := oc["time"]
 	cache := c.([]string)
 	oc["time"] = append(cache, ts)
 
@@ -541,7 +538,7 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if ord >= 0 {
-		c, _ := oc["guid"]
+		c := oc["guid"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
 			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord))
@@ -551,7 +548,7 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 
 	guid := uuidv4()
 	// store it in the cache
-	c, _ := oc["guid"]
+	c := oc["guid"]
 	cache := c.([]string)
 	oc["guid"] = append(cache, guid)
 
@@ -575,7 +572,7 @@ func name(nameType string, names []*Name, oc objectCache, opts cmdOptions) (stri
 	}
 
 	if ord >= 0 {
-		c, _ := oc[nameType]
+		c := oc[nameType]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
 			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for %s values. Please check your input string", ord, nameType))
