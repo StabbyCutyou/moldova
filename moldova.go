@@ -382,9 +382,7 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 	if cCase == "down" {
 		return strings.ToLower(country), nil
 	}
-
 	return country, nil
-
 }
 
 func unicode(oc objectCache, opts cmdOptions) (string, error) {
@@ -497,7 +495,6 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	}
 
 	f := opts["format"]
-
 	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
@@ -559,7 +556,6 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 	oc["guid"] = append(cache, guid)
 
 	return guid, nil
-
 }
 
 func firstname(oc objectCache, opts cmdOptions) (string, error) {
