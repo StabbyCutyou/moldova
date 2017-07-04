@@ -187,15 +187,15 @@ func uuidv4() string {
 
 func optionsToMap(name string, options string) (map[string]string, error) {
 	m := make(map[string]string)
+	defaults := defaultOptions[name]
+	for k, v := range defaults {
+		m[k] = v
+	}
 	// If there were no options specified, just use defaults
 	if len(options) == 0 {
 		return m, nil
 	}
 	parts := strings.Split(options, "|")
-	defaults := defaultOptions[name]
-	for k, v := range defaults {
-		m[k] = v
-	}
 
 	for _, p := range parts {
 		// Some options, like format, can have : in them. Only split the first :, which
