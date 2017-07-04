@@ -129,6 +129,10 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 		} else if foundWord && c == '}' {
 			// We're closing a word, so eval it and get the data to put in the string
 			foundWord = false
+			// TODO I dislike this part of the grammer - i think the arguments list
+			// should begin with the |, or at least it's own demarcation, to avoid the
+			// ugly and dual-purpose : construct. I'm open to even changing the grammar
+			// overall, but would need to be a hard version change.
 			parts := strings.SplitN(wordBuffer.String(), ":", 2)
 			rawOpts := ""
 			if len(parts) > 1 {
@@ -182,16 +186,17 @@ func uuidv4() string {
 }
 
 func optionsToMap(name string, options string) (map[string]string, error) {
-	parts := strings.Split(options, "|")
 	m := make(map[string]string)
-	defaults := defaultOptions[name]
-	for k, v := range defaults {
-		m[k] = v
-	}
 	// If there were no options specified, just use defaults
 	if len(options) == 0 {
 		return m, nil
 	}
+	parts := strings.Split(options, "|")
+	defaults := defaultOptions[name]
+	for k, v := range defaults {
+		m[k] = v
+	}
+
 	for _, p := range parts {
 		// Some options, like format, can have : in them. Only split the first :, which
 		// should have the arg name, ad a value with an arbitrary number of : inside of it
@@ -267,10 +272,9 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 	if max < 0 && min <= 0 {
 		// if the range is entirely negative
 		negateResult = true
-		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		//oldLower := min
+		// Swap the min, diff will be the same, but minimum is now inverted vs it's old value
+		// trip the flag to negate the overall result
 		min = -max
-		//max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
@@ -326,16 +330,14 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 	if min < 0.0 && max <= 0.0 {
 		// if the range is entirely negative
 		negateResult = true
-		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		//oldLower := min
+		// Swap the min, diff will be the same, but minimum is now inverted vs it's old value
+		// trip the flag to negate the overall result
 		min = -max
-		//max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
 	// get a number from 0 to diff
 	n := (rand.Float64() * diff) + min
-
 	if negateResult {
 		n = -n
 	}
