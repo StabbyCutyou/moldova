@@ -6,7 +6,6 @@ package moldova
 import (
 	"bytes"
 	crand "crypto/rand"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -223,7 +222,7 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 		return lastname(oc, opts)
 	}
 	// TODO make this an error
-	return "", nil
+	return "", UnsupportedTokenError(fmt.Sprintf("the token %s is not recognized, check for typos", word))
 }
 
 // TODO All the below functions need way better commenting and parameter annotations
@@ -248,14 +247,14 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 		c := oc["int"]
 		cache := c.([]int)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord))
 		}
 		i := cache[ord]
 		return strconv.Itoa(i), nil
 	}
 
 	if min > max {
-		return "", errors.New("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
+		return "", InvalidArgumentError("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	// Incase we need to tell the function to invert the case
@@ -307,14 +306,14 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 		c := oc["float"]
 		cache := c.([]float64)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for floats. Please check your input string", ord))
 		}
 		n := cache[ord]
 		return fmt.Sprintf("%f", n), nil
 	}
 
 	if min > max {
-		return "", errors.New("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
+		return "", InvalidArgumentError("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	// Incase we need to tell the function to invert the case
@@ -358,7 +357,7 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 		c, _ := oc["country"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord))
 		}
 		country := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
@@ -389,7 +388,7 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 	if err != nil {
 		return "", err
 	} else if num <= 0 {
-		return "", errors.New("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
+		return "", InvalidArgumentError("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
 	}
 	ord, err := opts.getInt("ordinal")
 	if err != nil {
@@ -400,7 +399,7 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 		c, _ := oc["unicode"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord))
 		}
 		str := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
@@ -458,7 +457,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		c, _ := oc["now"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord))
 		}
 		return cache[ord], nil
 	}
@@ -483,7 +482,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if min > max {
-		return "", errors.New("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
+		return "", InvalidArgumentError("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	z := opts["zone"]
@@ -502,7 +501,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		c, _ := oc["time"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord))
 		}
 		return cache[ord], nil
 	}
@@ -543,7 +542,7 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 		c, _ := oc["guid"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord))
 		}
 		return cache[ord], nil
 	}
@@ -578,7 +577,7 @@ func name(nameType string, names []*Name, oc objectCache, opts cmdOptions) (stri
 		c, _ := oc[nameType]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for %s values. Please check your input string", ord, nameType)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for %s values. Please check your input string", ord, nameType))
 		}
 		str := cache[ord]
 		// Names go into the cache as camel case, check if we need to swap it

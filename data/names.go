@@ -19,7 +19,7 @@ package data
 // "realistic" results... it's not so simple).
 
 // Initially, I set out to capture all these complexities, but realized I could get
-// a "good enough" set of base tools in place where peopl could mostly model the needed
+// a "good enough" set of base tools in place where people could mostly model the needed
 // parts in Moldovas templating language alone. So, here is currently what is supported:
 
 // There is a collection of First and Last names, which contain a map[string]string

@@ -397,6 +397,13 @@ var FullNameCases = []TestCase{
 	},
 }
 
+var InvalidTokenCases = []TestCase{
+	{
+		Template:     "{firstnmae} {plastname}",
+		WriteFailure: true,
+	},
+}
+
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
@@ -408,6 +415,7 @@ var AllCases = [][]TestCase{
 	FirstNameCases,
 	LastNameCases,
 	FullNameCases,
+	InvalidTokenCases,
 }
 
 // TODO Test each random function individually, under a number of inputs to make supported
