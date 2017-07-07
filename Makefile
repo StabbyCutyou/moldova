@@ -12,3 +12,9 @@ check:
 	staticcheck $$(go list ./... | grep -v /vendor/)
 	gosimple $$(go list ./... | grep -v /vendor/)
 	unused $$(go list ./... | grep -v /vendor/)
+
+bench:
+	go test -v -bench=. 
+
+benchmem:
+	go test -v -benchmem -bench=. 

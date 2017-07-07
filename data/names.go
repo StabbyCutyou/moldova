@@ -137,6 +137,15 @@ type Name struct {
 
 type spellings map[string]string
 
+func KnownLanguage(lang string) bool {
+	for _, l := range Langauges {
+		if l == lang {
+			return true
+		}
+	}
+	return false
+}
+
 // GetSpelling will return the first match found for the provided list of languages, in the
 // order in which they were passed in
 func (n *Name) GetSpelling(languages ...string) string {

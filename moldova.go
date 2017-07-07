@@ -568,6 +568,9 @@ func lastname(oc objectCache, opts cmdOptions) (string, error) {
 func name(nameType string, names []*Name, oc objectCache, opts cmdOptions) (string, error) {
 	cCase := opts["case"]
 	lang := opts["language"]
+	if !KnownLanguage(lang) {
+		return "", InvalidArgumentError(fmt.Sprintf("language: %s is not a known language", lang))
+	}
 	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
