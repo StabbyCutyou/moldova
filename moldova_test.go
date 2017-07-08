@@ -399,7 +399,11 @@ var FullNameCases = []TestCase{
 
 var InvalidTokenCases = []TestCase{
 	{
-		Template:     "{firstnmae} {plastname}",
+		Template:     "{firstname} {plastname}",
+		WriteFailure: true,
+	},
+	{
+		Template:     "{firstname:language:onglish}",
 		WriteFailure: true,
 	},
 }
@@ -448,7 +452,7 @@ func TestAllCases(t *testing.T) {
 			// Or, if we didn't get one but were expecting it
 			if err != nil && !c.WriteFailure {
 				t.Error(err)
-			} else if err == nil && c.ParseFailure {
+			} else if err == nil && c.WriteFailure {
 				t.Error("Expected to encounter Write Failure, but did not for Test Case ", c.Template)
 			}
 
