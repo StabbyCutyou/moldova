@@ -397,6 +397,17 @@ var FullNameCases = []TestCase{
 	},
 }
 
+var InvalidTokenCases = []TestCase{
+	{
+		Template:     "{firstname} {plastname}",
+		WriteFailure: true,
+	},
+	{
+		Template:     "{firstname:language:onglish}",
+		WriteFailure: true,
+	},
+}
+
 var AllCases = [][]TestCase{
 	GUIDCases,
 	NowCases,
@@ -408,6 +419,7 @@ var AllCases = [][]TestCase{
 	FirstNameCases,
 	LastNameCases,
 	FullNameCases,
+	InvalidTokenCases,
 }
 
 // TODO Test each random function individually, under a number of inputs to make supported
@@ -440,7 +452,7 @@ func TestAllCases(t *testing.T) {
 			// Or, if we didn't get one but were expecting it
 			if err != nil && !c.WriteFailure {
 				t.Error(err)
-			} else if err == nil && c.ParseFailure {
+			} else if err == nil && c.WriteFailure {
 				t.Error("Expected to encounter Write Failure, but did not for Test Case ", c.Template)
 			}
 

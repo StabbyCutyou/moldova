@@ -6,7 +6,6 @@ package moldova
 import (
 	"bytes"
 	crand "crypto/rand"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -110,10 +109,13 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 	stack := newCallstack()
 	wordBuffer := &bytes.Buffer{}
 	foundWord := false
-	for _, c := range inputTemplate {
+	wordStart := 0
+	for i, c := range inputTemplate {
 		if !foundWord && c == '{' {
 			// We're starting a word to parse
 			foundWord = true
+			// Track the position of where the word started, for potential error reporting
+			wordStart = i
 			// Dump the current buffer into a closure
 			// Assigning to 'cb', ClosureBuster, will get around this issue
 			// THANKS .NET PRIOR TO 4.0 FOR TEACHING ME ABOUT ACCESS TO A MODIFIED CLOSURE!
@@ -127,6 +129,10 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 		} else if foundWord && c == '}' {
 			// We're closing a word, so eval it and get the data to put in the string
 			foundWord = false
+			// TODO I dislike this part of the grammer - i think the arguments list
+			// should begin with the |, or at least it's own demarcation, to avoid the
+			// ugly and dual-purpose : construct. I'm open to even changing the grammar
+			// overall, but would need to be a hard version change.
 			parts := strings.SplitN(wordBuffer.String(), ":", 2)
 			rawOpts := ""
 			if len(parts) > 1 {
@@ -139,7 +145,7 @@ func BuildCallstack(inputTemplate string) (*Callstack, error) {
 			// Build the closure that will invoke resolveWord
 			f := func(result *bytes.Buffer, cache objectCache) error {
 				val := ""
-				if val, err = resolveWord(cache, parts[0], opts); err != nil {
+				if val, err = resolveWord(cache, parts[0], wordStart, opts); err != nil {
 					return err
 				}
 				result.WriteString(val)
@@ -180,7 +186,6 @@ func uuidv4() string {
 }
 
 func optionsToMap(name string, options string) (map[string]string, error) {
-	parts := strings.Split(options, "|")
 	m := make(map[string]string)
 	defaults := defaultOptions[name]
 	for k, v := range defaults {
@@ -190,6 +195,8 @@ func optionsToMap(name string, options string) (map[string]string, error) {
 	if len(options) == 0 {
 		return m, nil
 	}
+	parts := strings.Split(options, "|")
+
 	for _, p := range parts {
 		// Some options, like format, can have : in them. Only split the first :, which
 		// should have the arg name, ad a value with an arbitrary number of : inside of it
@@ -199,7 +206,7 @@ func optionsToMap(name string, options string) (map[string]string, error) {
 	return m, nil
 }
 
-func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
+func resolveWord(oc objectCache, word string, pos int, opts cmdOptions) (string, error) {
 	// If there were options provided, convert them to a lookup map prior to invoking
 	// a randomizer.
 	switch word {
@@ -222,8 +229,7 @@ func resolveWord(oc objectCache, word string, opts cmdOptions) (string, error) {
 	case "lastname":
 		return lastname(oc, opts)
 	}
-	// TODO make this an error
-	return "", nil
+	return "", UnsupportedTokenError(fmt.Sprintf("the token %s at position %d is not recognized, check for typos", word, pos))
 }
 
 // TODO All the below functions need way better commenting and parameter annotations
@@ -248,14 +254,14 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 		c := oc["int"]
 		cache := c.([]int)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord))
 		}
 		i := cache[ord]
 		return strconv.Itoa(i), nil
 	}
 
 	if min > max {
-		return "", errors.New("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
+		return "", InvalidArgumentError("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	// Incase we need to tell the function to invert the case
@@ -266,10 +272,9 @@ func integer(oc objectCache, opts cmdOptions) (string, error) {
 	if max < 0 && min <= 0 {
 		// if the range is entirely negative
 		negateResult = true
-		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		oldLower := min
+		// Swap the min, diff will be the same, but minimum is now inverted vs it's old value
+		// trip the flag to negate the overall result
 		min = -max
-		max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
@@ -307,14 +312,14 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 		c := oc["float"]
 		cache := c.([]float64)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for integers. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for floats. Please check your input string", ord))
 		}
 		n := cache[ord]
 		return fmt.Sprintf("%f", n), nil
 	}
 
 	if min > max {
-		return "", errors.New("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
+		return "", InvalidArgumentError("You cannot generate a random number whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	// Incase we need to tell the function to invert the case
@@ -325,16 +330,14 @@ func float(oc objectCache, opts cmdOptions) (string, error) {
 	if min < 0.0 && max <= 0.0 {
 		// if the range is entirely negative
 		negateResult = true
-		// Swap them, so they are still the same relative distance from eachother, but positive - invert the result
-		oldLower := min
+		// Swap the min, diff will be the same, but minimum is now inverted vs it's old value
+		// trip the flag to negate the overall result
 		min = -max
-		max = -oldLower
 	}
 	// neg to pos ranges currently not supported
 	// else both are positive
 	// get a number from 0 to diff
 	n := (rand.Float64() * diff) + min
-
 	if negateResult {
 		n = -n
 	}
@@ -355,10 +358,10 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 	}
 
 	if ord >= 0 {
-		c, _ := oc["country"]
+		c := oc["country"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for countries. Please check your input string", ord))
 		}
 		country := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
@@ -378,9 +381,7 @@ func country(oc objectCache, opts cmdOptions) (string, error) {
 	if cCase == "down" {
 		return strings.ToLower(country), nil
 	}
-
 	return country, nil
-
 }
 
 func unicode(oc objectCache, opts cmdOptions) (string, error) {
@@ -389,7 +390,7 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 	if err != nil {
 		return "", err
 	} else if num <= 0 {
-		return "", errors.New("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
+		return "", InvalidArgumentError("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
 	}
 	ord, err := opts.getInt("ordinal")
 	if err != nil {
@@ -397,10 +398,10 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 	}
 
 	if ord >= 0 {
-		c, _ := oc["unicode"]
+		c := oc["unicode"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord))
 		}
 		str := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
@@ -455,10 +456,10 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if ord >= 0 {
-		c, _ := oc["now"]
+		c := oc["now"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord))
 		}
 		return cache[ord], nil
 	}
@@ -466,7 +467,7 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 	ts := formatTime(&now, f)
 
 	// store it in the cache
-	c, _ := oc["now"]
+	c := oc["now"]
 	cache := c.([]string)
 	oc["now"] = append(cache, ts)
 
@@ -483,7 +484,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if min > max {
-		return "", errors.New("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
+		return "", InvalidArgumentError("You cannot generate a random time whose lower bound is greater than it's upper bound. Please check your input string")
 	}
 
 	z := opts["zone"]
@@ -493,16 +494,15 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	}
 
 	f := opts["format"]
-
 	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
 	if ord >= 0 {
-		c, _ := oc["time"]
+		c := oc["time"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for time-now. Please check your input string", ord))
 		}
 		return cache[ord], nil
 	}
@@ -520,7 +520,7 @@ func datetime(oc objectCache, opts cmdOptions) (string, error) {
 	t := time.Unix(ut, 0).In(loc)
 	ts := formatTime(&t, f)
 	// store it in the cache
-	c, _ := oc["time"]
+	c := oc["time"]
 	cache := c.([]string)
 	oc["time"] = append(cache, ts)
 
@@ -540,22 +540,21 @@ func guid(oc objectCache, opts cmdOptions) (string, error) {
 		return "", err
 	}
 	if ord >= 0 {
-		c, _ := oc["guid"]
+		c := oc["guid"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for guids. Please check your input string", ord))
 		}
 		return cache[ord], nil
 	}
 
 	guid := uuidv4()
 	// store it in the cache
-	c, _ := oc["guid"]
+	c := oc["guid"]
 	cache := c.([]string)
 	oc["guid"] = append(cache, guid)
 
 	return guid, nil
-
 }
 
 func firstname(oc objectCache, opts cmdOptions) (string, error) {
@@ -569,16 +568,19 @@ func lastname(oc objectCache, opts cmdOptions) (string, error) {
 func name(nameType string, names []*Name, oc objectCache, opts cmdOptions) (string, error) {
 	cCase := opts["case"]
 	lang := opts["language"]
+	if !KnownLanguage(lang) {
+		return "", InvalidArgumentError(fmt.Sprintf("language: %s is not a known language", lang))
+	}
 	ord, err := opts.getInt("ordinal")
 	if err != nil {
 		return "", err
 	}
 
 	if ord >= 0 {
-		c, _ := oc[nameType]
+		c := oc[nameType]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", fmt.Errorf("Ordinal %d has not yet been encountered for %s values. Please check your input string", ord, nameType)
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for %s values. Please check your input string", ord, nameType))
 		}
 		str := cache[ord]
 		// Names go into the cache as camel case, check if we need to swap it

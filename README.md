@@ -56,10 +56,10 @@ Each token defines it's own set of arguments, which are outlined below. If you'r
 
 It is only necessary to provide a | when you have further arguments to provide. For example:
 
-* {integer}
-* {integer:min:10}
-* {integer:min:10|max:50}
-* {integer:min:10|max:50|ordinal:0}
+* {int}
+* {int:min:10}
+* {int:min:10|max:50}
+* {int:min:10|max:50|ordinal:0}
 
 
 ## {guid}
