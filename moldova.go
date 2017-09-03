@@ -441,7 +441,7 @@ func ascii(oc objectCache, opts cmdOptions) (string, error) {
 		c := oc["ascii"]
 		cache := c.([]string)
 		if len(cache)-1 < ord {
-			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord))
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for ASCII strings. Please check your input string", ord))
 		}
 		str := cache[ord]
 		// Countries go into the cache upper case, only check for lowering it
@@ -463,6 +463,8 @@ func ascii(oc objectCache, opts cmdOptions) (string, error) {
 }
 
 func generateRandomASCIIString(length int) string {
+	// This also includes numbers which is questionable, however since when folks want to
+	// work with ascii strings, they anticipate 0-9 as well. Open to changing this if need be.
 	var letters = []rune("0123456789abcdefghijklmnopqrstuvwxy")
 
 	b := make([]rune, length)

@@ -340,7 +340,7 @@ var ASCIICases = []TestCase{
 			if len(s) == 2 {
 				return nil
 			}
-			return errors.New("ASCII string not the correct length")
+			return errors.New("Ascii string not the correct length")
 		},
 	},
 	{
@@ -368,7 +368,7 @@ var ASCIICases = []TestCase{
 			if p[0] == p[1] {
 				return nil
 			}
-			return errors.New("ACSII at position 1 not equal to Unicode at position 0: " + p[0] + " " + p[1])
+			return errors.New("ASCII at position 1 not equal to ASCII at position 0: " + p[0] + " " + p[1])
 		},
 	},
 	{
