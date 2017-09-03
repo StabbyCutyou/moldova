@@ -478,8 +478,7 @@ func generateRandomString(length int) string {
 	rarr := make([]rune, length)
 	for i := 0; i < length; i++ {
 		// First, pick which range this character comes from
-		o := rand.Intn(len(PrintableRanges))
-		r := PrintableRanges[o]
+		r := PrintableRanges[rand.Intn(len(PrintableRanges))]
 
 		minCharCode := r[0]
 		maxCharCode := r[1]
