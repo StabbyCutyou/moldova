@@ -222,6 +222,8 @@ func resolveWord(oc objectCache, word string, pos int, opts cmdOptions) (string,
 		return float(oc, opts)
 	case "unicode":
 		return unicode(oc, opts)
+	case "ascii":
+		return ascii(oc, opts)
 	case "country":
 		return country(oc, opts)
 	case "firstname":
@@ -420,6 +422,54 @@ func unicode(oc objectCache, opts cmdOptions) (string, error) {
 		return strings.ToUpper(string(result)), nil
 	}
 	return string(result), nil
+}
+
+func ascii(oc objectCache, opts cmdOptions) (string, error) {
+	cCase := opts["case"]
+	num, err := opts.getInt("length")
+	if err != nil {
+		return "", err
+	} else if num <= 0 {
+		return "", InvalidArgumentError("You have specified a number of characters to generate which is not a number greater than zero. Please check your input string")
+	}
+	ord, err := opts.getInt("ordinal")
+	if err != nil {
+		return "", err
+	}
+
+	if ord >= 0 {
+		c := oc["ascii"]
+		cache := c.([]string)
+		if len(cache)-1 < ord {
+			return "", InvalidArgumentError(fmt.Sprintf("Ordinal %d has not yet been encountered for unicode strings. Please check your input string", ord))
+		}
+		str := cache[ord]
+		// Countries go into the cache upper case, only check for lowering it
+		if cCase == "up" {
+			return strings.ToUpper(str), nil
+		}
+		return str, nil
+	}
+
+	result := generateRandomASCIIString(num)
+	// store it in the cache
+	ca := oc["ascii"]
+	cache := ca.([]string)
+	oc["ascii"] = append(cache, result)
+	if cCase == "up" {
+		return strings.ToUpper(string(result)), nil
+	}
+	return string(result), nil
+}
+
+func generateRandomASCIIString(length int) string {
+	var letters = []rune("0123456789abcdefghijklmnopqrstuvwxy")
+
+	b := make([]rune, length)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
 
 func generateRandomString(length int) string {

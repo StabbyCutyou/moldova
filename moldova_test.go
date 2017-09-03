@@ -333,6 +333,50 @@ var UnicodeCases = []TestCase{
 	},
 }
 
+var ASCIICases = []TestCase{
+	{
+		Template: "{ascii}",
+		Comparator: func(s string) error {
+			if len(s) == 2 {
+				return nil
+			}
+			return errors.New("ASCII string not the correct length")
+		},
+	},
+	{
+		Template: "{ascii:length:10}",
+		Comparator: func(s string) error {
+			if len(s) == 10 {
+				return nil
+			}
+			return errors.New("ASCII string not the correct length")
+		},
+	},
+	{
+		Template: "{ascii:length:10|case:up}",
+		Comparator: func(s string) error {
+			if len(s) == 10 || strings.ToLower(s) != strings.ToUpper(s) {
+				return nil
+			}
+			return errors.New("ASCII string not the correct length")
+		},
+	},
+	{
+		Template: "{ascii}@{ascii:ordinal:0}",
+		Comparator: func(s string) error {
+			p := strings.Split(s, "@")
+			if p[0] == p[1] {
+				return nil
+			}
+			return errors.New("ACSII at position 1 not equal to Unicode at position 0: " + p[0] + " " + p[1])
+		},
+	},
+	{
+		Template:     "{ascii}@{ascii:ordinal:1}",
+		WriteFailure: true,
+	},
+}
+
 var FirstNameCases = []TestCase{
 	{
 		Template: "{firstname}",
@@ -416,6 +460,7 @@ var AllCases = [][]TestCase{
 	FloatCases,
 	IntegerCases,
 	UnicodeCases,
+	ASCIICases,
 	FirstNameCases,
 	LastNameCases,
 	FullNameCases,
@@ -587,6 +632,23 @@ func BenchmarkCountry(b *testing.B) {
 
 func BenchmarkUnicode(b *testing.B) {
 	c := UnicodeCases[0]
+	var cs *Callstack
+	var err error
+	if cs, err = BuildCallstack(c.Template); err != nil {
+		b.Error(err)
+	}
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		result := &bytes.Buffer{}
+		err = cs.Write(result)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+func BenchmarkASCII(b *testing.B) {
+	c := ASCIICases[0]
 	var cs *Callstack
 	var err error
 	if cs, err = BuildCallstack(c.Template); err != nil {

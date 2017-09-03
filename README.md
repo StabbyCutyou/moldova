@@ -168,6 +168,25 @@ characters, of a length specified by :number. The default value is 2.
 Only a certain subset of unicode character ranges are supported by default, as defined
 in the moldova/data/unicode.go file.
 
+## {ascii}
+
+### Options
+* length : integer >= 1
+* case : "up" or "down"
+* ordinal : integer >= 0
+
+### Description
+
+Moldova will replace any instance of {ascii} with a randomly generated set of ASCII
+characters, of a length specified by :number. The default value is 2.
+
+{ascii} also takes the :case argument, which is either 'up' or 'down', like so
+
+{ascii:case:up}
+{ascii:case:down}
+
+{ascii} also supports *ordinal:* option
+
 ## {firstname}
 
 ### Options
