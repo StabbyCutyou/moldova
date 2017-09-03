@@ -494,10 +494,7 @@ func generateRandomString(length int) string {
 }
 
 func now(oc objectCache, opts cmdOptions) (string, error) {
-	f := opts["format"]
-
-	z := opts["zone"]
-	loc, err := time.LoadLocation(z)
+	loc, err := time.LoadLocation(opts["zone"])
 	if err != nil {
 		return "", err
 	}
@@ -515,13 +512,12 @@ func now(oc objectCache, opts cmdOptions) (string, error) {
 		return cache[ord], nil
 	}
 	now := time.Now().In(loc)
-	ts := formatTime(&now, f)
+	ts := formatTime(&now, opts["format"])
 
 	// store it in the cache
 	c := oc["now"]
 	cache := c.([]string)
 	oc["now"] = append(cache, ts)
-
 	return ts, nil
 }
 
